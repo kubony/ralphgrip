@@ -1,0 +1,76 @@
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function proxy(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              maxAge: options?.maxAge ?? 60 * 60 * 24 * 7,
+            })
+          )
+        },
+      },
+    }
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const isAuthRoute =
+    request.nextUrl.pathname.startsWith('/login') ||
+    request.nextUrl.pathname.startsWith('/auth')
+  const isProtectedRoute =
+    request.nextUrl.pathname.startsWith('/projects') ||
+    request.nextUrl.pathname.startsWith('/my-work') ||
+    request.nextUrl.pathname.startsWith('/pipeline') ||
+    request.nextUrl.pathname.startsWith('/settings')
+
+  if (!user && isProtectedRoute) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  const ALLOWED_EMAILS = ['kubony@gmail.com']
+  if (
+    user &&
+    isProtectedRoute &&
+    !user.email?.endsWith('@maum.ai') &&
+    !ALLOWED_EMAILS.includes(user.email ?? '')
+  ) {
+    await supabase.auth.signOut()
+    return NextResponse.redirect(
+      new URL('/login?error=domain_not_allowed', request.url)
+    )
+  }
+
+  if (user && isAuthRoute) {
+    return NextResponse.redirect(new URL('/my-work', request.url))
+  }
+
+  if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/my-work', request.url))
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}

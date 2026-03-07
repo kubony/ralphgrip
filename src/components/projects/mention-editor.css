@@ -1,0 +1,29 @@
+/* TipTap mention editor styles */
+
+.mention-editor .tiptap {
+  outline: none;
+  height: 100%;
+}
+
+.mention-editor .tiptap p {
+  margin: 0;
+}
+
+/* Mention chip */
+.mention-editor .mention {
+  color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 15%, transparent);
+  border-radius: 0.25rem;
+  padding: 1px 4px;
+  font-weight: 500;
+  box-decoration-break: clone;
+}
+
+/* Placeholder */
+.mention-editor .tiptap p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
