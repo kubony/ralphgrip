@@ -317,6 +317,7 @@ export const getMyMentionedComments = cache(async (userId: string) => {
         .select(`
           id, content, created_at,
           author:profiles!comments_author_id_fkey(id, full_name, avatar_url),
+          agent:agents!comments_agent_id_fkey(id, display_name, avatar_url, agent_kind),
           work_item:work_items!inner(id, number, title, project_id,
             project:projects!inner(id, name, key)
           )
@@ -335,6 +336,7 @@ export const getMyMentionedComments = cache(async (userId: string) => {
         return {
           ...row,
           author: Array.isArray(row.author) ? row.author[0] ?? null : row.author,
+          agent: Array.isArray(row.agent) ? row.agent[0] ?? null : row.agent,
           work_item: {
             ...rawWi,
             project: Array.isArray(rawProject) ? rawProject[0] : rawProject,
@@ -345,6 +347,7 @@ export const getMyMentionedComments = cache(async (userId: string) => {
         content: string
         created_at: string
         author: { id: string; full_name: string | null; avatar_url: string | null } | null
+        agent: { id: string; display_name: string; avatar_url: string | null; agent_kind: string } | null
         work_item: {
           id: string
           number: number
@@ -638,6 +641,7 @@ export const getProjectRecentComments = cache(async (projectId: string, limit = 
         .select(`
           id, content, created_at,
           author:profiles!comments_author_id_fkey(id, full_name, avatar_url),
+          agent:agents!comments_agent_id_fkey(id, display_name, avatar_url, agent_kind),
           work_item:work_items!inner(id, number, title, project_id)
         `)
         .eq('work_item.project_id', projectId)
@@ -651,12 +655,14 @@ export const getProjectRecentComments = cache(async (projectId: string, limit = 
       return (data ?? []).map(row => ({
         ...row,
         author: Array.isArray(row.author) ? row.author[0] ?? null : row.author,
+        agent: Array.isArray(row.agent) ? row.agent[0] ?? null : row.agent,
         work_item: Array.isArray(row.work_item) ? row.work_item[0] : row.work_item,
       })) as {
         id: string
         content: string
         created_at: string
         author: { id: string; full_name: string | null; avatar_url: string | null } | null
+        agent: { id: string; display_name: string; avatar_url: string | null; agent_kind: string } | null
         work_item: { id: string; number: number; title: string; project_id: string }
       }[]
     },

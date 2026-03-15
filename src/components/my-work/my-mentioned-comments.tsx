@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { CommentText } from '@/components/projects/comment-text'
+import { ActorAvatar, getActorName } from '@/components/ui/actor-avatar'
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down'
 import AtSign from 'lucide-react/dist/esm/icons/at-sign'
 import MessageSquare from 'lucide-react/dist/esm/icons/message-square'
@@ -25,25 +26,6 @@ function timeAgo(dateStr: string): string {
   const diffDay = Math.floor(diffHour / 24)
   if (diffDay < 7) return `${diffDay}일 전`
   return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-}
-
-function AuthorAvatar({ author }: { author: MentionedComment['author'] }) {
-  if (author?.avatar_url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={author.avatar_url}
-        alt={author.full_name ?? ''}
-        className="w-6 h-6 rounded-full flex-shrink-0"
-      />
-    )
-  }
-  const initial = author?.full_name?.[0] ?? '?'
-  return (
-    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium flex-shrink-0">
-      {initial}
-    </div>
-  )
 }
 
 export function MyMentionedComments({ comments }: MyMentionedCommentsProps) {
@@ -91,10 +73,10 @@ export function MyMentionedComments({ comments }: MyMentionedCommentsProps) {
 
               {/* Comment body */}
               <div className="flex gap-2 ml-[18px]">
-                <AuthorAvatar author={comment.author} />
+                <ActorAvatar profile={comment.author} agent={comment.agent} size="sm" className="w-6 h-6 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-xs font-medium">{comment.author?.full_name ?? '알 수 없음'}</span>
+                    <span className="text-xs font-medium">{getActorName(comment.author, comment.agent)}</span>
                     <span className="text-[10px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
                   </div>
                   <div className="text-xs text-muted-foreground line-clamp-2">

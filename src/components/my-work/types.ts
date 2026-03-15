@@ -59,6 +59,7 @@ export interface MentionedComment {
   content: string
   created_at: string
   author: { id: string; full_name: string | null; avatar_url: string | null } | null
+  agent: { id: string; display_name: string; avatar_url: string | null; agent_kind: string } | null
   work_item: {
     id: string
     number: number

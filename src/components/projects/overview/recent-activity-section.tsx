@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ActorAvatar, getActorName } from '@/components/ui/actor-avatar'
 import { Button } from '@/components/ui/button'
 import MessageSquare from 'lucide-react/dist/esm/icons/message-square'
 import ArrowRightLeft from 'lucide-react/dist/esm/icons/arrow-right-left'
@@ -29,6 +29,7 @@ interface RecentComment {
   content: string
   created_at: string
   author: { id: string; full_name: string | null; avatar_url: string | null } | null
+  agent: { id: string; display_name: string; avatar_url: string | null; agent_kind: string } | null
   work_item: { id: string; number: number; title: string; project_id: string }
 }
 
@@ -56,6 +57,7 @@ interface ActivityItem {
   type: ActivityType
   timestamp: string
   user: { id: string; full_name: string | null; avatar_url: string | null } | null
+  agent?: { id: string; display_name: string; avatar_url: string | null; agent_kind: string } | null
   workItem: WorkItemRef
   commentContent?: string
   description: string
@@ -91,11 +93,6 @@ function timeAgo(dateStr: string): string {
   if (diffDay < 7) return `${diffDay}일 전`
 
   return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-}
-
-function getInitials(name: string | null): string {
-  if (!name) return '?'
-  return name.slice(0, 1).toUpperCase()
 }
 
 // ---- Component ----
@@ -225,6 +222,7 @@ export function RecentActivitySection({
         type: 'comment',
         timestamp: comment.created_at,
         user: comment.author,
+        agent: comment.agent,
         workItem: {
           id: comment.work_item.id,
           number: comment.work_item.number,
@@ -279,18 +277,13 @@ export function RecentActivitySection({
                 className="flex gap-3 p-2 rounded-lg hover:bg-accent transition-colors group"
               >
                 {/* Avatar */}
-                <Avatar className="h-7 w-7 shrink-0 mt-0.5">
-                  <AvatarImage src={item.user?.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {getInitials(item.user?.full_name ?? null)}
-                  </AvatarFallback>
-                </Avatar>
+                <ActorAvatar profile={item.user} agent={item.agent} size="sm" className="h-7 w-7 shrink-0 mt-0.5" />
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 text-sm">
                     <span className="font-medium truncate">
-                      {item.user?.full_name ?? '시스템'}
+                      {getActorName(item.user, item.agent)}
                     </span>
                     <span className="text-muted-foreground shrink-0">
                       {activityIcon(item.type)}
