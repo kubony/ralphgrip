@@ -49,10 +49,11 @@ CREATE POLICY "Users can view their own permissions"
 
 CREATE POLICY "Agent owner can manage permissions"
   ON public.agent_permissions FOR ALL
-  USING (EXISTS (
-    SELECT 1 FROM public.agents a
-    WHERE a.id = agent_permissions.agent_id AND a.owner_id = (SELECT auth.uid())
-  ));
+  USING (
+    granted_by = (SELECT auth.uid())
+    OR
+    user_id = (SELECT auth.uid())
+  );
 
 -- 3. agent_logs 테이블 (에이전트 활동 로그)
 CREATE TABLE public.agent_logs (
@@ -87,12 +88,6 @@ CREATE POLICY "Users can view accessible agents"
     OR
     -- owned 에이전트: 본인이 생성한 에이전트
     (category = 'owned' AND owner_id = (SELECT auth.uid()))
-    OR
-    -- restricted 에이전트: 권한 부여된 사용자
-    (category = 'restricted' AND EXISTS (
-      SELECT 1 FROM public.agent_permissions ap
-      WHERE ap.agent_id = agents.id AND ap.user_id = (SELECT auth.uid())
-    ))
     OR
     -- restricted 에이전트: 생성자 본인
     (category = 'restricted' AND owner_id = (SELECT auth.uid()))
