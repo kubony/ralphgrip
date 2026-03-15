@@ -22,7 +22,7 @@ interface ResolvedProject {
   channelId: string
 }
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://worvgrip.com').trim().replace(/\/+$/, '')
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://madspeed.app').trim().replace(/\/+$/, '')
 
 function itemUrl(projectKey: string, itemNumber: number) {
   return `${APP_URL}/projects/${projectKey}/alm?item=${itemNumber}`
@@ -244,7 +244,7 @@ export function buildTestMessage(ctx: ProjectContext): SlackMessage {
       {
         type: 'context',
         elements: [
-          { type: 'plain_text', text: `Sent by ${ctx.userName} via Worvk`, emoji: true },
+          { type: 'plain_text', text: `Sent by ${ctx.userName} via AgentGrip`, emoji: true },
         ],
       },
     ],

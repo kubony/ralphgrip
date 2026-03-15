@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/toaster";
 import { ConfirmDialogProvider } from "@/hooks/use-confirm-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,10 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GRIP",
-  description: "AI 기반 프로젝트 관리 도구",
+  title: "AgentGrip",
+  description: "AI 기반 프로젝트 관리 + 자동 코딩 오케스트레이터",
   icons: {
     icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico', sizes: '32x32' },
       { url: '/favicon.png', sizes: '192x192' },
     ],
@@ -48,7 +48,6 @@ export default function RootLayout({
           {children}
           <Toaster />
         </TooltipProvider>
-        <Analytics />
       </body>
     </html>
   );

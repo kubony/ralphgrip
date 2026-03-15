@@ -17,7 +17,7 @@ export default async function Home() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="font-bold text-xl">WoRV Grip</div>
+          <div className="font-bold text-xl">AgentGrip</div>
           <Link href="/login">
             <Button>로그인</Button>
           </Link>
@@ -50,7 +50,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © 2024 WoRV Grip. All rights reserved.
+          © 2025 AgentGrip. All rights reserved.
         </div>
       </footer>
     </div>

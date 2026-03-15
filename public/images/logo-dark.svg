@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 32" height="32">
+  <rect width="32" height="32" rx="6" fill="#e5e7eb"/>
+  <text x="16" y="22" font-family="system-ui,-apple-system,sans-serif" font-size="16" font-weight="700" fill="#111827" text-anchor="middle">AG</text>
+  <text x="40" y="22" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="600" fill="#f9fafb">AgentGrip</text>
+</svg>

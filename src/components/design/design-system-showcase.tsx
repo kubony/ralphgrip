@@ -53,7 +53,7 @@ export function DesignSystemShowcase() {
         <section className="rounded-2xl border bg-card p-6 md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Worvk</p>
+              <p className="text-sm text-muted-foreground">AgentGrip</p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">Design System</h1>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Live preview of theme tokens currently applied in this app.

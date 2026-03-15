@@ -39,11 +39,19 @@ export function Header({ user, userId, initialNotifications, initialUnreadCount 
         {/* Logo */}
         <Link href="/my-work" className="flex items-center">
           <Image
-            src="/images/logo.png"
-            alt="GRIP"
-            width={100}
+            src="/images/logo.svg"
+            alt="AgentGrip"
+            width={140}
             height={28}
-            className="h-7 w-auto"
+            className="h-7 w-auto dark:hidden"
+            priority
+          />
+          <Image
+            src="/images/logo-dark.svg"
+            alt="AgentGrip"
+            width={140}
+            height={28}
+            className="h-7 w-auto hidden dark:block"
             priority
           />
         </Link>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 const ERROR_MESSAGES: Record<string, string> = {
-  domain_not_allowed: 'maum.ai 계정만 로그인할 수 있습니다.',
+  domain_not_allowed: '허용되지 않은 계정입니다.',
   auth_failed: '로그인에 실패했습니다. 다시 시도해주세요.',
 }
 
@@ -38,9 +38,9 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">WoRV Grip</CardTitle>
+        <CardTitle className="text-2xl font-bold">AgentGrip</CardTitle>
         <CardDescription>
-          요구사항 추적과 이슈 관리를 하나로
+          AI 기반 프로젝트 관리 + 자동 코딩 오케스트레이터
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
