@@ -828,7 +828,8 @@ export async function getComments(workItemId: string) {
     .from('comments')
     .select(`
       *,
-      author:profiles!author_id(id, full_name, avatar_url)
+      author:profiles!author_id(id, full_name, avatar_url),
+      agent:agents!agent_id(id, display_name, avatar_url, agent_type)
     `)
     .eq('work_item_id', workItemId)
     .order('created_at', { ascending: true })
@@ -1629,4 +1630,135 @@ export async function testSlackNotification(projectId: string) {
   if (authError) return { error: authError }
 
   return sendTestSlackMessage(projectId)
+}
+
+// ============ Agents ============
+
+async function requireAdminAccess(projectId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '로그인이 필요합니다.', supabase: null }
+
+  const { data: member } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!member || !['owner', 'admin'].includes(member.role)) {
+    return { error: '관리자 권한이 필요합니다.', supabase: null }
+  }
+
+  return { error: null, supabase }
+}
+
+export async function getAgents(projectId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '로그인이 필요합니다.' }
+
+  const { data: member } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!member) return { error: '프로젝트 접근 권한이 없습니다.' }
+
+  const { data, error } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
+
+  if (error) return { error: error.message }
+  return { data }
+}
+
+export async function createAgent(
+  projectId: string,
+  input: { name: string; display_name: string; agent_type: string; description?: string },
+) {
+  const { error: authError, supabase } = await requireAdminAccess(projectId)
+  if (authError || !supabase) return { error: authError }
+
+  const rawKey = `ag_${crypto.randomUUID().replace(/-/g, '')}`
+  const prefix = rawKey.slice(0, 11) + '...'
+
+  const encoder = new TextEncoder()
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(rawKey))
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const apiKeyHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+
+  const { data, error } = await supabase
+    .from('agents')
+    .insert({
+      project_id: projectId,
+      name: input.name,
+      display_name: input.display_name,
+      agent_type: input.agent_type,
+      description: input.description ?? null,
+      api_key_hash: apiKeyHash,
+      api_key_prefix: prefix,
+    })
+    .select()
+    .single()
+
+  if (error) return { error: error.message }
+  return { data, apiKey: rawKey }
+}
+
+export async function updateAgent(
+  agentId: string,
+  projectId: string,
+  input: { display_name?: string; agent_type?: string; status?: string; description?: string },
+) {
+  const { error: authError, supabase } = await requireAdminAccess(projectId)
+  if (authError || !supabase) return { error: authError }
+
+  const { error } = await supabase
+    .from('agents')
+    .update(input)
+    .eq('id', agentId)
+    .eq('project_id', projectId)
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function deleteAgent(agentId: string, projectId: string) {
+  const { error: authError, supabase } = await requireAdminAccess(projectId)
+  if (authError || !supabase) return { error: authError }
+
+  const { error } = await supabase
+    .from('agents')
+    .delete()
+    .eq('id', agentId)
+    .eq('project_id', projectId)
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function regenerateAgentApiKey(agentId: string, projectId: string) {
+  const { error: authError, supabase } = await requireAdminAccess(projectId)
+  if (authError || !supabase) return { error: authError }
+
+  const rawKey = `ag_${crypto.randomUUID().replace(/-/g, '')}`
+  const prefix = rawKey.slice(0, 11) + '...'
+
+  const encoder = new TextEncoder()
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(rawKey))
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const apiKeyHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+
+  const { error } = await supabase
+    .from('agents')
+    .update({ api_key_hash: apiKeyHash, api_key_prefix: prefix })
+    .eq('id', agentId)
+    .eq('project_id', projectId)
+
+  if (error) return { error: error.message }
+  return { apiKey: rawKey }
 }

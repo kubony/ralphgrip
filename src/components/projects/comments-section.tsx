@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ActorAvatar, getActorName } from '@/components/ui/actor-avatar'
 import { MentionTextarea } from './mention-textarea'
 import { CommentText } from './comment-text'
 import type { PersonRef, CommentAttachment } from '@/types/database'
@@ -30,12 +30,20 @@ interface Author {
   avatar_url: string | null
 }
 
+interface CommentAgent {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  agent_type: string
+}
+
 interface Comment {
   id: string
   content: string
   created_at: string
   updated_at: string
   author: Author | null
+  agent: CommentAgent | null
   attachments: CommentAttachment[]
 }
 
@@ -383,16 +391,16 @@ export function CommentsSection({
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className="flex gap-2 group">
-              <Avatar className="h-7 w-7 shrink-0">
-                <AvatarImage src={comment.author?.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {getInitials(comment.author?.full_name)}
-                </AvatarFallback>
-              </Avatar>
+              <ActorAvatar
+                profile={comment.author}
+                agent={comment.agent}
+                size="sm"
+                className="h-7 w-7"
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate">
-                    {comment.author?.full_name || '알 수 없음'}
+                    {getActorName(comment.author, comment.agent)}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {formatCommentDate(comment.created_at)}

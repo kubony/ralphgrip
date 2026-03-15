@@ -306,7 +306,7 @@ export function ALMPropertyPanel({
             label="공개 수준"
           >
             <Select
-              value={workItem.visibility}
+              value={workItem.visibility ?? undefined}
               onValueChange={(value) => handleFieldChange('visibility', value)}
               disabled={isSaving}
             >

@@ -8,6 +8,8 @@ import { ProjectExportSection } from './project-export-section'
 import { SlackSettings } from './slack-settings'
 import { DriveSettings } from './drive-settings'
 import { DangerZone } from './danger-zone'
+import { AgentsSettings } from './agents-settings'
+import { createClient } from '@/lib/supabase/server'
 
 interface SettingsPageProps {
   params: Promise<{ key: string }>
@@ -16,6 +18,7 @@ interface SettingsPageProps {
 const sections = [
   { id: 'general', label: 'General' },
   { id: 'members', label: 'Members' },
+  { id: 'agents', label: 'AI Agents' },
   { id: 'display', label: 'Display' },
   { id: 'integrations', label: 'Integrations' },
   { id: 'export', label: 'Export' },
@@ -34,10 +37,15 @@ export default async function ProjectSettingsPage({ params }: SettingsPageProps)
     notFound()
   }
 
-  const [{ workItems }, membersWithRoles] = await Promise.all([
+  const supabase = await createClient()
+
+  const [{ workItems }, membersWithRoles, agentsResult] = await Promise.all([
     getProjectData(project.id),
     getProjectMembersWithRoles(project.id),
+    supabase.from('agents').select('*').eq('project_id', project.id).order('created_at', { ascending: true }),
   ])
+
+  const agents = agentsResult.data ?? []
 
   // Export 섹션에 전달할 workItems 변환
   const exportWorkItems = workItems.map((wi: Record<string, unknown>) => ({
@@ -95,6 +103,8 @@ export default async function ProjectSettingsPage({ params }: SettingsPageProps)
               members={membersWithRoles}
               currentUserId={user?.id}
             />
+            <Separator />
+            <AgentsSettings projectId={project.id} initialAgents={agents} />
             <Separator />
             <ProjectSettingsForm
               projectId={project.id}

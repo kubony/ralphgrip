@@ -114,6 +114,17 @@ export interface WorkItemDetail {
   reporter: Reporter | null
 }
 
+// ============ Agent ============
+
+export interface Agent {
+  id: string
+  name: string
+  display_name: string
+  avatar_url: string | null
+  agent_type: string
+  status: string
+}
+
 // ============ Comments ============
 
 export interface CommentDetail {
@@ -122,6 +133,7 @@ export interface CommentDetail {
   created_at: string
   updated_at: string
   author: Author | null
+  agent: Agent | null
 }
 
 // ============ UI State ============

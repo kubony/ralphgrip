@@ -13,7 +13,8 @@ export interface CreateNotificationParams {
   workItemNumber: number
   title: string        // work item title
   body?: string        // preview text
-  actorId: string      // who triggered
+  actorId: string      // who triggered (human profile)
+  agentActorId?: string // who triggered (agent) — mutually exclusive with actorId
   commentId?: string   // for comment/mention types
 }
 
@@ -45,7 +46,7 @@ export function stripMentionMarkup(text: string): string {
  * Self-notifications (actorId === userId) are skipped.
  */
 export async function createNotification(params: CreateNotificationParams): Promise<void> {
-  if (params.actorId === params.userId) return
+  if (!params.agentActorId && params.actorId === params.userId) return
 
   try {
     const supabase = getServiceClient()
@@ -58,7 +59,8 @@ export async function createNotification(params: CreateNotificationParams): Prom
       work_item_number: params.workItemNumber,
       title: params.title,
       body: params.body ?? null,
-      actor_id: params.actorId,
+      actor_id: params.agentActorId ? null : params.actorId,
+      agent_actor_id: params.agentActorId ?? null,
       comment_id: params.commentId ?? null,
     })
   } catch {
@@ -73,7 +75,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
  */
 export async function createNotifications(paramsList: CreateNotificationParams[]): Promise<void> {
   const rows = paramsList
-    .filter((p) => p.actorId !== p.userId)
+    .filter((p) => p.agentActorId || p.actorId !== p.userId)
     .map((p) => ({
       user_id: p.userId,
       type: p.type,
@@ -83,7 +85,8 @@ export async function createNotifications(paramsList: CreateNotificationParams[]
       work_item_number: p.workItemNumber,
       title: p.title,
       body: p.body ?? null,
-      actor_id: p.actorId,
+      actor_id: p.agentActorId ? null : p.actorId,
+      agent_actor_id: p.agentActorId ?? null,
       comment_id: p.commentId ?? null,
     }))
 

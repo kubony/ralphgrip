@@ -15,6 +15,7 @@ interface ProjectContext {
   projectKey: string
   projectName: string
   userName: string
+  agentName?: string
 }
 
 interface ResolvedProject {
@@ -96,11 +97,16 @@ function viewButton(url: string): SlackBlock {
   }
 }
 
+function actorLabel(ctx: ProjectContext): string {
+  if (ctx.agentName) return `${ctx.agentName} (Bot)`
+  return ctx.userName
+}
+
 function contextBlock(ctx: ProjectContext): SlackBlock {
   return {
     type: 'context',
     elements: [
-      { type: 'plain_text', text: `${ctx.userName} · ${ctx.projectKey}`, emoji: true },
+      { type: 'plain_text', text: `${actorLabel(ctx)} · ${ctx.projectKey}`, emoji: true },
     ],
   }
 }

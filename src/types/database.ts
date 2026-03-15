@@ -218,3 +218,6 @@ export type Comment = CommentRow
 export type ProjectMember = ProjectMemberRow
 export type WorkItemAuditLog = WorkItemAuditLogRow
 export type ProjectAuditLog = ProjectAuditLogRow
+
+// Agent types (agents table added in migration 030)
+export type AgentStatus = 'active' | 'inactive' | 'revoked'
