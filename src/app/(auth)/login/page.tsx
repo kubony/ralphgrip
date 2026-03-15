@@ -4,11 +4,76 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 const ERROR_MESSAGES: Record<string, string> = {
   domain_not_allowed: '허용되지 않은 계정입니다.',
   auth_failed: '로그인에 실패했습니다. 다시 시도해주세요.',
+}
+
+function RalphMascot({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 280" className={className} xmlns="http://www.w3.org/2000/svg">
+      {/* === FULL BODY RALPH (Simpsons style) === */}
+
+      {/* Shoes */}
+      <ellipse cx="75" cy="268" rx="18" ry="8" fill="#6B7280" stroke="#374151" strokeWidth="1.5" />
+      <ellipse cx="125" cy="268" rx="18" ry="8" fill="#6B7280" stroke="#374151" strokeWidth="1.5" />
+
+      {/* Legs / Blue shorts */}
+      <rect x="68" y="230" width="22" height="40" rx="6" fill="#4A90D9" stroke="#2C5F8A" strokeWidth="1.5" />
+      <rect x="110" y="230" width="22" height="40" rx="6" fill="#4A90D9" stroke="#2C5F8A" strokeWidth="1.5" />
+
+      {/* Body / Light blue shirt */}
+      <ellipse cx="100" cy="210" rx="48" ry="38" fill="#7ECFCF" stroke="#5BA8A8" strokeWidth="1.5" />
+      {/* Shirt collar */}
+      <path d="M80 178 Q100 188 120 178" stroke="#5BA8A8" strokeWidth="1.5" fill="none" />
+
+      {/* Belt */}
+      <rect x="55" y="225" width="90" height="8" rx="2" fill="#9CA3AF" stroke="#6B7280" strokeWidth="1" />
+      <rect x="94" y="223" width="12" height="12" rx="2" fill="#EF4444" stroke="#B91C1C" strokeWidth="0.8" />
+
+      {/* Arms (yellow, Simpsons skin) */}
+      <path d="M52 195 Q30 200, 25 220" stroke="#FFD90F" strokeWidth="16" fill="none" strokeLinecap="round" />
+      <path d="M148 195 Q170 200, 175 220" stroke="#FFD90F" strokeWidth="16" fill="none" strokeLinecap="round" />
+      {/* Hands */}
+      <circle cx="25" cy="224" r="10" fill="#FFD90F" stroke="#C9A200" strokeWidth="1" />
+      <circle cx="175" cy="224" r="10" fill="#FFD90F" stroke="#C9A200" strokeWidth="1" />
+
+      {/* Head */}
+      <ellipse cx="100" cy="100" rx="58" ry="62" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.5" />
+
+      {/* Hair spikes (same yellow, outlined) */}
+      <polygon points="50,55 58,18 70,50 82,10 94,48 106,5 118,48 130,12 142,52 150,20 155,58" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.5" strokeLinejoin="round" />
+
+      {/* Ear left */}
+      <ellipse cx="44" cy="105" rx="10" ry="12" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.2" />
+      {/* Ear right */}
+      <ellipse cx="156" cy="105" rx="10" ry="12" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.2" />
+
+      {/* Eyes */}
+      <ellipse cx="78" cy="95" rx="16" ry="18" fill="white" stroke="#2C2C2C" strokeWidth="1.5" />
+      <ellipse cx="122" cy="95" rx="16" ry="18" fill="white" stroke="#2C2C2C" strokeWidth="1.5" />
+      {/* Pupils (slightly looking to side) */}
+      <circle cx="82" cy="98" r="6.5" fill="#2C2C2C" />
+      <circle cx="126" cy="98" r="6.5" fill="#2C2C2C" />
+      {/* Eye highlight */}
+      <circle cx="80" cy="94" r="2.5" fill="white" />
+      <circle cx="124" cy="94" r="2.5" fill="white" />
+
+      {/* Nose */}
+      <ellipse cx="100" cy="112" rx="8" ry="5" fill="#E8BE00" stroke="#C9A200" strokeWidth="1" />
+
+      {/* Mouth - overbite expression */}
+      <path d="M74 130 Q100 145, 126 130" stroke="#8B6508" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* Teeth (overbite) */}
+      <rect x="86" y="129" width="28" height="10" rx="2" fill="white" stroke="#8B6508" strokeWidth="1" />
+      <line x1="100" y1="129" x2="100" y2="139" stroke="#8B6508" strokeWidth="0.8" />
+
+      {/* Finger near mouth (classic Ralph pose) */}
+      <path d="M25 224 Q35 200, 75 135" stroke="#FFD90F" strokeWidth="10" fill="none" strokeLinecap="round" />
+      <circle cx="75" cy="133" r="6" fill="#FFD90F" stroke="#C9A200" strokeWidth="0.8" />
+    </svg>
+  )
 }
 
 function LoginForm() {
@@ -36,25 +101,37 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">AgentGrip</CardTitle>
-        <CardDescription>
-          AI 기반 프로젝트 관리 + 자동 코딩 오케스트레이터
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="flex flex-col items-center gap-6">
+      {/* Mascot */}
+      <RalphMascot className="w-44 h-56 drop-shadow-lg" />
+
+      {/* Login Card */}
+      <div className="w-full max-w-sm bg-white/90 dark:bg-card/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-border p-8 space-y-6">
+        {/* Brand */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            <span className="text-[#FFD90F]" style={{ textShadow: '1px 1px 0 #8B6508, -0.5px -0.5px 0 #8B6508' }}>Ralph</span>
+            <span className="text-foreground">Grip</span>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            프로젝트를 즐겁게 관리하는 방법
+          </p>
+        </div>
+
+        {/* Error */}
         {error && ERROR_MESSAGES[error] && (
-          <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive text-center">
+          <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive text-center">
             {ERROR_MESSAGES[error]}
           </div>
         )}
+
+        {/* Google Login */}
         <Button
           onClick={handleGoogleLogin}
-          className="w-full"
+          className="w-full h-12 text-base font-semibold rounded-xl"
           size="lg"
         >
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+          <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
             <path
               fill="currentColor"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -74,17 +151,29 @@ function LoginForm() {
           </svg>
           Google로 로그인
         </Button>
-      </CardContent>
-    </Card>
+
+        <p className="text-xs text-center text-muted-foreground/60">
+          로그인하면 서비스 이용약관에 동의하는 것으로 간주됩니다
+        </p>
+      </div>
+    </div>
   )
 }
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#FFD90F]/10 via-background to-[#7ECFCF]/10 dark:from-[#FFD90F]/5 dark:via-background dark:to-[#7ECFCF]/5">
+      {/* Background decorations */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-[#FFD90F]/8 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-[#7ECFCF]/10 blur-3xl" />
+      </div>
+
+      <div className="relative z-10">
+        <Suspense>
+          <LoginForm />
+        </Suspense>
+      </div>
     </div>
   )
 }

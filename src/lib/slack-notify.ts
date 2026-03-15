@@ -250,7 +250,7 @@ export function buildTestMessage(ctx: ProjectContext): SlackMessage {
       {
         type: 'context',
         elements: [
-          { type: 'plain_text', text: `Sent by ${ctx.userName} via AgentGrip`, emoji: true },
+          { type: 'plain_text', text: `Sent by ${ctx.userName} via RalphGrip`, emoji: true },
         ],
       },
     ],

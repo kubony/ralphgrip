@@ -388,9 +388,109 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
 - `PRD.md`: 상세 제품 요구사항 (기능 명세, 데이터 모델, 마일스톤)
 - `REQUIREMENTS.md`: 원본 요구사항
 
+## 배포
+
+### 인프라 구성
+
+- **GCP 프로젝트**: `madspeed-ikseo`
+- **프로덕션 VM**: `madspeed-web` (asia-northeast3-a, e2-standard-2)
+- **프로덕션 IP**: `34.50.15.61`
+- **프로세스 관리**: PM2 (`madspeed` 프로세스)
+- **GitHub 레포**: `inkeunseo-maum/agentgrip`
+
+### VM 디렉토리 구조
+
+```
+/home/inkeun/
+├── agentgrip/    # git clone (origin: inkeunseo-maum/agentgrip)
+└── madspeed/     # 프로덕션 실행 디렉토리 (PM2 cwd)
+```
+
+### 배포 절차
+
+```bash
+# 1. VM 접속
+gcloud compute ssh madspeed-web --project=madspeed-ikseo --zone=asia-northeast3-a
+
+# 2. 코드 업데이트
+cd ~/agentgrip
+git pull origin main
+
+# 3. 프로덕션 디렉토리에 동기화 (node_modules, .git 제외)
+rsync -av --delete --exclude='node_modules' --exclude='.git' --exclude='.next' --exclude='.env.local' ~/agentgrip/ ~/madspeed/
+
+# 4. 빌드
+cd ~/madspeed
+pnpm install
+pnpm build
+
+# 5. 재시작
+pm2 restart madspeed
+```
+
+### PM2 관리 명령어
+
+```bash
+pm2 list                    # 프로세스 상태
+pm2 logs madspeed           # 로그 확인
+pm2 restart madspeed        # 재시작
+pm2 show madspeed           # 상세 정보
+```
+
+### CI
+
+GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test + build 검증
+
+## 배포
+
+### 인프라
+
+- **VM**: GCP Compute Engine `madspeed-web` (e2-standard-2, Ubuntu 22.04)
+- **GCP 프로젝트**: `madspeed-ikseo`
+- **Zone**: `asia-northeast3-a`
+- **외부 IP**: `34.50.15.61`
+- **앱 경로**: `~/agentgrip` (git clone, SSH deploy key)
+- **프로세스**: PM2 (`agentgrip`), Next.js 포트 3000
+- **리버스 프록시**: nginx (80 → 3000)
+
+### 배포 명령어
+
+```bash
+# 로컬에서 SSH 접속하여 배포
+gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="
+  cd ~/agentgrip && \
+  git pull && \
+  pnpm install --frozen-lockfile && \
+  NODE_OPTIONS='--max-old-space-size=4096' pnpm build && \
+  pm2 restart agentgrip
+"
+```
+
+### 빌드 주의사항
+
+- e2-standard-2 (8GB RAM)에서 TypeScript 체크 시 OOM 발생 가능
+- 반드시 `NODE_OPTIONS='--max-old-space-size=4096'` 설정 필요
+- PM2 설정이 저장되어 있으므로 VM 재부팅 시 자동 시작됨
+
+### VM 관리
+
+```bash
+# VM 상태 확인
+gcloud compute instances describe madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --format="value(status)"
+
+# PM2 상태/로그 확인
+gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="pm2 list && pm2 logs agentgrip --lines 20 --nostream"
+```
+
 ## 환경 변수
 
 `.env.local`에 설정:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_APP_URL` — 프로덕션: `http://34.50.15.61`, 개발: `http://localhost:3000`
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `SLACK_BOT_TOKEN`
+- `SLACK_SIGNING_SECRET`
+- `INTERNAL_API_KEY`

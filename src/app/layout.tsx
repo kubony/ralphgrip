@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgentGrip",
-  description: "AI 기반 프로젝트 관리 + 자동 코딩 오케스트레이터",
+  title: "RalphGrip",
+  description: "프로젝트를 즐겁게 관리하는 방법 — RalphGrip",
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
