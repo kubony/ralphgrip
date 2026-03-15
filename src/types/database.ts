@@ -77,6 +77,14 @@ export interface PersonRef {
   avatar_url: string | null
 }
 
+// 에이전트 참조 (agents 테이블 부분 조인)
+export interface AgentRef {
+  id: string
+  name: string
+  display_name: string
+  avatar_url: string | null
+}
+
 // 트래커 서브셋 (컴포넌트 표시용)
 export interface TrackerRef {
   id: string
@@ -99,6 +107,8 @@ export interface WorkItemWithRelations extends WorkItemRow {
   status: StatusRef | null
   assignee: PersonRef | null
   reporter: PersonRef | null
+  agent_assignee: AgentRef | null
+  agent_reporter: AgentRef | null
 }
 
 // 트리 패널용 최소 work item

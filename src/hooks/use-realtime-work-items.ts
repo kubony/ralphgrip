@@ -42,7 +42,9 @@ export function useRealtimeWorkItems(
               tracker:trackers(*),
               status:statuses(*),
               assignee:profiles!work_items_assignee_id_fkey(id, full_name, avatar_url),
-              reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url)
+              reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url),
+              agent_assignee:agents!work_items_agent_assignee_id_fkey(id, name, display_name, avatar_url),
+              agent_reporter:agents!work_items_agent_reporter_id_fkey(id, name, display_name, avatar_url)
             `)
             .eq('id', payload.new.id)
             .single()

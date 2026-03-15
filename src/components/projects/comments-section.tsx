@@ -1,19 +1,21 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { ActorAvatar, getActorName } from '@/components/ui/actor-avatar'
 import { MentionTextarea } from './mention-textarea'
 import { CommentText } from './comment-text'
-import type { PersonRef, CommentAttachment } from '@/types/database'
+import type { PersonRef, CommentAttachment, Comment as CommentRow } from '@/types/database'
 import {
   getComments,
   createComment,
   updateComment,
   deleteComment,
 } from '@/app/(dashboard)/projects/[key]/actions'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { uploadImage, getSignedUrls } from '@/lib/supabase/upload-image'
 import { cn } from '@/lib/utils'
 import Send from 'lucide-react/dist/esm/icons/send'
@@ -60,15 +62,19 @@ interface CommentsSectionProps {
   members: PersonRef[]
 }
 
-// 모듈 스코프 유틸리티 (리렌더마다 재생성 방지)
-function getInitials(name: string | null | undefined) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+function normalizeComment(row: Record<string, unknown>): Comment {
+  return {
+    ...(row as Omit<Comment, 'author' | 'agent' | 'attachments'>),
+    author: Array.isArray(row.author) ? (row.author[0] as Author | null) ?? null : (row.author as Author | null) ?? null,
+    agent: Array.isArray(row.agent) ? (row.agent[0] as CommentAgent | null) ?? null : (row.agent as CommentAgent | null) ?? null,
+    attachments: Array.isArray(row.attachments) ? (row.attachments as CommentAttachment[]) : [],
+  }
+}
+
+function sortComments(commentList: Comment[]) {
+  return [...commentList].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
 }
 
 function formatCommentDate(dateStr: string) {
@@ -131,17 +137,89 @@ export function CommentsSection({
 
   // 댓글 로드
   useEffect(() => {
+    let isActive = true
+
     async function loadComments() {
       setIsLoading(true)
       const result = await getComments(workItemId)
+      if (!isActive) return
+
       if (result.data) {
-        const loaded = result.data as Comment[]
+        const loaded = sortComments((result.data as Record<string, unknown>[]).map(normalizeComment))
         setComments(loaded)
         await refreshSignedUrls(loaded)
       }
       setIsLoading(false)
     }
     loadComments()
+
+    return () => {
+      isActive = false
+    }
+  }, [workItemId, refreshSignedUrls])
+
+  // 댓글 실시간 구독 (에이전트/다른 사용자 댓글 즉시 반영)
+  useEffect(() => {
+    const supabase = createBrowserClient()
+
+    const upsertComment = (incoming: Comment) => {
+      setComments((prev) => {
+        const existingIndex = prev.findIndex((comment) => comment.id === incoming.id)
+        if (existingIndex === -1) {
+          return sortComments([...prev, incoming])
+        }
+
+        const next = [...prev]
+        next[existingIndex] = incoming
+        return sortComments(next)
+      })
+    }
+
+    const syncComment = async (commentId: string) => {
+      const { data } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          author:profiles!comments_author_id_fkey(id, full_name, avatar_url),
+          agent:agents!comments_agent_id_fkey(id, display_name, avatar_url, agent_kind)
+        `)
+        .eq('id', commentId)
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      if (!data) return
+
+      const normalized = normalizeComment(data as unknown as Record<string, unknown>)
+      upsertComment(normalized)
+      await refreshSignedUrls([normalized])
+    }
+
+    const channel = supabase
+      .channel(`comments-${workItemId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments',
+          filter: `work_item_id=eq.${workItemId}`,
+        },
+        async (payload: RealtimePostgresChangesPayload<CommentRow>) => {
+          if (payload.eventType === 'DELETE') {
+            setComments((prev) => prev.filter((comment) => comment.id !== payload.old.id))
+            return
+          }
+
+          if (payload.new?.id) {
+            await syncComment(payload.new.id)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
   }, [workItemId, refreshSignedUrls])
 
   // 파일 업로드 핸들러 (새 댓글용)
@@ -289,9 +367,8 @@ export function CommentsSection({
     setIsSubmitting(true)
     const result = await createComment(workItemId, newComment, projectId, pendingAttachments)
     if (result.data) {
-      const newC = result.data as Comment
-      if (!newC.attachments) newC.attachments = []
-      setComments((prev) => [...prev, newC])
+      const newC = normalizeComment(result.data as unknown as Record<string, unknown>)
+      setComments((prev) => sortComments([...prev.filter((comment) => comment.id !== newC.id), newC]))
       setNewComment('')
       setPendingAttachments([])
     } else if (result.error) {
@@ -589,7 +666,7 @@ export function CommentsSection({
             onChange={setNewComment}
             members={members}
             placeholder="댓글을 입력하세요... (@로 멘션)"
-            className="h-[60px] text-sm"
+            className="h-[60px] min-w-0 flex-1 text-sm"
             onSubmit={handleSubmit}
           />
           <div className="flex flex-col gap-1 shrink-0">

@@ -43,6 +43,7 @@ import type {
   StatusRef,
   TrackerRef,
   PersonRef,
+  AgentRef,
   LinkCount,
   LinkedIssueStatus,
 
@@ -69,6 +70,7 @@ interface ALMLayoutProps {
   statuses: StatusRef[]
   trackers: TrackerRef[]
   members: PersonRef[]
+  agents?: AgentRef[]
   workItems: WorkItemWithRelations[]
   currentUserId?: string
   showTrackerId?: boolean
@@ -85,6 +87,7 @@ export function ALMLayout({
   statuses,
   trackers,
   members,
+  agents,
   workItems,
   currentUserId,
   showTrackerId,
@@ -704,9 +707,9 @@ export function ALMLayout({
           <ResizableHandle />
           <ResizablePanel
             panelRef={propertyPanelRef}
-            defaultSize="25%"
-            minSize="15%"
-            maxSize="40%"
+            defaultSize="30%"
+            minSize="22%"
+            maxSize="45%"
             collapsible
             collapsedSize="0%"
             onResize={(size) => setIsPanelOpen(size.asPercentage > 0)}
@@ -719,6 +722,7 @@ export function ALMLayout({
               statuses={statuses}
               trackers={trackers}
               members={members}
+              agents={agents}
               projectId={projectId}
               currentUserId={currentUserId}
               onViewInGraph={handleViewInGraph}

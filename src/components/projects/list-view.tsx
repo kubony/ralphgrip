@@ -28,6 +28,8 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import Bot from 'lucide-react/dist/esm/icons/bot'
+import { getAssigneeDisplay } from '@/lib/assignee-utils'
 import type {
   WorkItemWithRelations,
   StatusRef,
@@ -369,21 +371,29 @@ export default function ListView({
 
                     {/* 담당자 */}
                     <div className="w-[120px] px-3 py-2.5">
-                      {item.assignee ? (
-                        <div className="flex items-center gap-1.5">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={item.assignee.avatar_url || undefined} />
-                            <AvatarFallback className="text-[10px]">
-                              {getInitials(item.assignee.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                            {item.assignee.full_name || '이름 없음'}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                      {(() => {
+                        const display = getAssigneeDisplay(item)
+                        if (!display) return <span className="text-xs text-muted-foreground">-</span>
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            {display.isAgent ? (
+                              <div className="flex items-center justify-center h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex-shrink-0">
+                                <Bot className="h-3 w-3 text-violet-500" />
+                              </div>
+                            ) : (
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={display.avatar || undefined} />
+                                <AvatarFallback className="text-[10px]">
+                                  {getInitials(display.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                              {display.name || '이름 없음'}
+                            </span>
+                          </div>
+                        )
+                      })()}
                     </div>
 
                     {/* 마감일 */}

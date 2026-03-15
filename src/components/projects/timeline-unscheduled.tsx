@@ -8,10 +8,12 @@ import FolderIcon from 'lucide-react/dist/esm/icons/folder'
 import Circle from 'lucide-react/dist/esm/icons/circle'
 import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2'
 import GripVertical from 'lucide-react/dist/esm/icons/grip-vertical'
+import Bot from 'lucide-react/dist/esm/icons/bot'
 
 import { cn } from '@/lib/utils'
 import type { WorkItemWithRelations } from '@/types/database'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { getAssigneeDisplay } from '@/lib/assignee-utils'
 
 interface TimelineUnscheduledProps {
   items: WorkItemWithRelations[]
@@ -126,17 +128,26 @@ function TimelineUnscheduled({
                 {/* Title */}
                 <span className="text-xs truncate flex-1">{item.title}</span>
 
-                {/* Assignee Avatar */}
-                {item.assignee && (
-                  <Avatar className="h-5 w-5">
-                    {item.assignee.avatar_url && (
-                      <AvatarImage src={item.assignee.avatar_url} />
-                    )}
-                    <AvatarFallback className="text-[10px]">
-                      {item.assignee.full_name?.[0] || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
+                {/* Assignee Avatar (person or agent) */}
+                {(() => {
+                  const display = getAssigneeDisplay(item)
+                  if (!display) return null
+                  if (display.isAgent) {
+                    return (
+                      <div className="flex items-center justify-center h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex-shrink-0">
+                        <Bot className="h-3 w-3 text-violet-500" />
+                      </div>
+                    )
+                  }
+                  return (
+                    <Avatar className="h-5 w-5">
+                      {display.avatar && <AvatarImage src={display.avatar} />}
+                      <AvatarFallback className="text-[10px]">
+                        {display.name?.[0] || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                  )
+                })()}
 
                 {/* Date Set Button */}
                 <button

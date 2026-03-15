@@ -400,6 +400,7 @@ export async function updateWorkItem(
     tracker_id?: string
     priority?: number
     assignee_id?: string | null
+    agent_assignee_id?: string | null
     due_date?: string | null
     start_date?: string | null
     actual_start_date?: string | null
@@ -828,17 +829,26 @@ export async function getComments(workItemId: string) {
     .from('comments')
     .select(`
       *,
-      author:profiles!author_id(id, full_name, avatar_url),
-      agent:agents!agent_id(id, display_name, avatar_url, agent_kind)
+      author:profiles!comments_author_id_fkey(id, full_name, avatar_url),
+      agent:agents!comments_agent_id_fkey(id, display_name, avatar_url, agent_kind)
     `)
     .eq('work_item_id', workItemId)
+    .is('deleted_at', null)
     .order('created_at', { ascending: true })
+
+  console.log('[getComments]', { workItemId, dataLen: data?.length, error: error?.message })
 
   if (error) {
     return { error: error.message }
   }
 
-  return { data }
+  return {
+    data: (data ?? []).map((row) => ({
+      ...row,
+      author: Array.isArray(row.author) ? row.author[0] ?? null : row.author,
+      agent: Array.isArray(row.agent) ? row.agent[0] ?? null : row.agent,
+    })),
+  }
 }
 
 export async function createComment(workItemId: string, content: string, projectId: string, attachments: CommentAttachment[] = []) {
@@ -859,7 +869,8 @@ export async function createComment(workItemId: string, content: string, project
     })
     .select(`
       *,
-      author:profiles!author_id(id, full_name, avatar_url)
+      author:profiles!comments_author_id_fkey(id, full_name, avatar_url),
+      agent:agents!comments_agent_id_fkey(id, display_name, avatar_url, agent_kind)
     `)
     .single()
 
@@ -930,7 +941,13 @@ export async function createComment(workItemId: string, content: string, project
   })()
 
   await revalidateProject(projectId)
-  return { data }
+  return {
+    data: {
+      ...data,
+      author: Array.isArray(data.author) ? data.author[0] ?? null : data.author,
+      agent: Array.isArray(data.agent) ? data.agent[0] ?? null : data.agent,
+    },
+  }
 }
 
 export async function updateComment(commentId: string, content: string, projectId: string, attachments?: CommentAttachment[]) {

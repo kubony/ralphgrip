@@ -28,6 +28,8 @@ import Folder from 'lucide-react/dist/esm/icons/folder'
 import Link2 from 'lucide-react/dist/esm/icons/link-2'
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal'
 import Eye from 'lucide-react/dist/esm/icons/eye'
+import Bot from 'lucide-react/dist/esm/icons/bot'
+import { getAssigneeDisplay } from '@/lib/assignee-utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -206,20 +208,30 @@ const KanbanCard = memo(function KanbanCard({
             {/* Title */}
             <p className="text-sm font-medium line-clamp-2 mb-2">{item.title}</p>
 
-            {/* Bottom row: assignee */}
-            {item.assignee && (
-              <div className="flex items-center gap-1.5">
-                <Avatar size="sm">
-                  <AvatarImage src={item.assignee.avatar_url || undefined} />
-                  <AvatarFallback className="text-[10px]">
-                    {getInitials(item.assignee.full_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-muted-foreground truncate">
-                  {item.assignee.full_name || '이름 없음'}
-                </span>
-              </div>
-            )}
+            {/* Bottom row: assignee (person or agent) */}
+            {(() => {
+              const display = getAssigneeDisplay(item)
+              if (!display) return null
+              return (
+                <div className="flex items-center gap-1.5">
+                  {display.isAgent ? (
+                    <div className="flex items-center justify-center h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex-shrink-0">
+                      <Bot className="h-3 w-3 text-violet-500" />
+                    </div>
+                  ) : (
+                    <Avatar size="sm">
+                      <AvatarImage src={display.avatar || undefined} />
+                      <AvatarFallback className="text-[10px]">
+                        {getInitials(display.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <span className="text-xs text-muted-foreground truncate">
+                    {display.name || '이름 없음'}
+                  </span>
+                </div>
+              )
+            })()}
           </motion.div>
         </motion.div>
       </ContextMenuTrigger>
@@ -266,19 +278,29 @@ function KanbanCardOverlay({
         )}
       </div>
       <p className="text-sm font-medium line-clamp-2 mb-2">{item.title}</p>
-      {item.assignee && (
-        <div className="flex items-center gap-1.5">
-          <Avatar size="sm">
-            <AvatarImage src={item.assignee.avatar_url || undefined} />
-            <AvatarFallback className="text-[10px]">
-              {getInitials(item.assignee.full_name)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground truncate">
-            {item.assignee.full_name || '이름 없음'}
-          </span>
-        </div>
-      )}
+      {(() => {
+        const display = getAssigneeDisplay(item)
+        if (!display) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            {display.isAgent ? (
+              <div className="flex items-center justify-center h-5 w-5 rounded-full bg-violet-100 dark:bg-violet-900/30 flex-shrink-0">
+                <Bot className="h-3 w-3 text-violet-500" />
+              </div>
+            ) : (
+              <Avatar size="sm">
+                <AvatarImage src={display.avatar || undefined} />
+                <AvatarFallback className="text-[10px]">
+                  {getInitials(display.name)}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <span className="text-xs text-muted-foreground truncate">
+              {display.name || '이름 없음'}
+            </span>
+          </div>
+        )
+      })()}
     </motion.div>
   )
 }

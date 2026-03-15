@@ -238,7 +238,7 @@ export function MentionTextarea({
   }, [value, editor])
 
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('mention-editor relative w-full', className)}>
       <div className="min-h-[88px] rounded-md border border-input bg-background px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <EditorContent editor={editor} />
       </div>

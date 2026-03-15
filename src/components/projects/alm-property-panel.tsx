@@ -25,7 +25,8 @@ import { CommentsSection } from './comments-section'
 import { DependencySection } from './dependency-section'
 import { AnimatedAccordion } from '@/components/ui/animated-accordion'
 import { cn } from '@/lib/utils'
-import type { WorkItemWithRelations, StatusRef, TrackerRef, PersonRef, AiMetadata, WorkItemExternalLink } from '@/types/database'
+import type { WorkItemWithRelations, StatusRef, TrackerRef, PersonRef, AgentRef, AiMetadata, WorkItemExternalLink } from '@/types/database'
+import { getAssigneeDisplay, getReporterDisplay } from '@/lib/assignee-utils'
 import { detectLinkDomain } from '@/lib/external-link-utils'
 import { scrollMaskBoth } from '@/lib/motion'
 import { LinkDomainIcon } from './link-domain-icon'
@@ -50,6 +51,7 @@ import Layers from 'lucide-react/dist/esm/icons/layers'
 import Lock from 'lucide-react/dist/esm/icons/lock'
 import Eye from 'lucide-react/dist/esm/icons/eye'
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
+import Bot from 'lucide-react/dist/esm/icons/bot'
 
 interface ALMPropertyPanelProps {
   workItem: WorkItemWithRelations | null | undefined
@@ -59,6 +61,7 @@ interface ALMPropertyPanelProps {
   statuses: StatusRef[]
   trackers: TrackerRef[]
   members: PersonRef[]
+  agents?: AgentRef[]
   projectId: string
   currentUserId?: string
   onViewInGraph?: (workItemId: string) => void
@@ -91,6 +94,7 @@ export function ALMPropertyPanel({
   statuses,
   trackers,
   members,
+  agents = [],
   projectId,
   currentUserId,
   onViewInGraph,
@@ -332,10 +336,25 @@ export function ALMPropertyPanel({
             label="담당자"
           >
             <Select
-              value={workItem.assignee?.id || 'unassigned'}
-              onValueChange={(value) =>
-                handleFieldChange('assignee_id', value === 'unassigned' ? null : value)
+              value={
+                workItem.assignee?.id
+                  ? `profile:${workItem.assignee.id}`
+                  : workItem.agent_assignee?.id
+                    ? `agent:${workItem.agent_assignee.id}`
+                    : 'unassigned'
               }
+              onValueChange={(value) => {
+                if (value === 'unassigned') {
+                  handleFieldChange('assignee_id', null)
+                  handleFieldChange('agent_assignee_id', null)
+                } else if (value.startsWith('agent:')) {
+                  handleFieldChange('agent_assignee_id', value.slice(6))
+                  handleFieldChange('assignee_id', null)
+                } else if (value.startsWith('profile:')) {
+                  handleFieldChange('assignee_id', value.slice(8))
+                  handleFieldChange('agent_assignee_id', null)
+                }
+              }}
               disabled={isSaving}
             >
               <SelectTrigger className="h-8">
@@ -345,9 +364,23 @@ export function ALMPropertyPanel({
                 <SelectItem value="unassigned">
                   <span className="text-muted-foreground">미배정</span>
                 </SelectItem>
+                {members.length > 0 && (
+                  <div className="px-2 py-1 text-xs text-muted-foreground font-medium">멤버</div>
+                )}
                 {members.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
+                  <SelectItem key={member.id} value={`profile:${member.id}`}>
                     {member.full_name || '이름 없음'}
+                  </SelectItem>
+                ))}
+                {agents.length > 0 && (
+                  <div className="px-2 py-1 text-xs text-muted-foreground font-medium">에이전트</div>
+                )}
+                {agents.map((agent) => (
+                  <SelectItem key={agent.id} value={`agent:${agent.id}`}>
+                    <div className="flex items-center gap-1.5">
+                      <Bot className="h-3 w-3 text-violet-500 flex-shrink-0" />
+                      {agent.display_name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -359,8 +392,12 @@ export function ALMPropertyPanel({
             icon={<UserCircle className="h-4 w-4" />}
             label="생성자"
           >
-            <div className="h-8 px-3 flex items-center text-sm bg-muted/50 rounded-md">
-              {workItem.reporter?.full_name || '알 수 없음'}
+            <div className="h-8 px-3 flex items-center gap-1.5 text-sm bg-muted/50 rounded-md">
+              {workItem.agent_reporter && <Bot className="h-3 w-3 text-violet-500 flex-shrink-0" />}
+              {(() => {
+                const reporter = getReporterDisplay(workItem)
+                return reporter?.name || '알 수 없음'
+              })()}
             </div>
           </PropertyField>
 
@@ -859,11 +896,12 @@ function ManHourSummary({ workItem, allWorkItems }: { workItem: WorkItemWithRela
   const descendants = getDescendants(workItem.id)
   if (descendants.length === 0) return null
 
-  // 인원별 집계 (담당자 기준)
+  // 인원별 집계 (담당자 기준 — 사람 + 에이전트)
   const byPerson = new Map<string, { name: string; estimated: number; actual: number }>()
   for (const item of descendants) {
-    const key = item.assignee?.id || '__unassigned__'
-    const name = item.assignee?.full_name || '미배정'
+    const display = getAssigneeDisplay(item)
+    const key = display ? (item.assignee?.id || `agent:${item.agent_assignee?.id}`) : '__unassigned__'
+    const name = display?.name || '미배정'
     const entry = byPerson.get(key) || { name, estimated: 0, actual: 0 }
     entry.estimated += item.estimated_hours || 0
     entry.actual += item.actual_hours || 0
@@ -871,8 +909,9 @@ function ManHourSummary({ workItem, allWorkItems }: { workItem: WorkItemWithRela
   }
 
   // 자기 자신도 포함
-  const selfKey = workItem.assignee?.id || '__unassigned__'
-  const selfName = workItem.assignee?.full_name || '미배정'
+  const selfDisplay = getAssigneeDisplay(workItem)
+  const selfKey = selfDisplay ? (workItem.assignee?.id || `agent:${workItem.agent_assignee?.id}`) : '__unassigned__'
+  const selfName = selfDisplay?.name || '미배정'
   if (workItem.estimated_hours || workItem.actual_hours) {
     const entry = byPerson.get(selfKey) || { name: selfName, estimated: 0, actual: 0 }
     entry.estimated += workItem.estimated_hours || 0
@@ -957,18 +996,21 @@ function ProjectSummaryPanel({
   const statusEntries = [...statusMap.values()]
     .toSorted((a, b) => (a.status.position ?? 0) - (b.status.position ?? 0))
 
-  // 담당자별 카운트
-  const assigneeMap = new Map<string, { name: string; count: number }>()
+  // 담당자별 카운트 (사람 + 에이전트)
+  const assigneeMap = new Map<string, { name: string; count: number; isAgent: boolean }>()
   let unassignedCount = 0
   for (const item of allWorkItems) {
-    if (item.assignee) {
-      const existing = assigneeMap.get(item.assignee.id)
+    const display = getAssigneeDisplay(item)
+    if (display) {
+      const key = item.assignee?.id || `agent:${item.agent_assignee?.id}`
+      const existing = assigneeMap.get(key)
       if (existing) {
         existing.count++
       } else {
-        assigneeMap.set(item.assignee.id, {
-          name: item.assignee.full_name || '이름 없음',
+        assigneeMap.set(key, {
+          name: display.name || '이름 없음',
           count: 1,
+          isAgent: display.isAgent,
         })
       }
     } else {

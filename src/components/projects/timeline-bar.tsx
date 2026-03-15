@@ -4,6 +4,7 @@ import React, { useRef, useCallback, useState } from 'react'
 import { parseISO, isBefore, startOfDay, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { WorkItemWithRelations } from '@/types/database'
+import { getAssigneeDisplay } from '@/lib/assignee-utils'
 import { ROW_HEIGHT, BAR_HEIGHT } from '@/hooks/use-timeline-state'
 import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle'
 import Diamond from 'lucide-react/dist/esm/icons/diamond'
@@ -35,14 +36,26 @@ const PRIORITY_COLORS: Record<number, string> = {
 const FOLDER_BAR_HEIGHT = 4
 const AVATAR_SIZE = 16
 
-function AssigneeAvatar({ assignee }: { assignee: { full_name: string | null; avatar_url: string | null } }) {
-  const initials = assignee.full_name?.charAt(0)?.toUpperCase() || '?'
+function AssigneeAvatar({ assignee }: { assignee: { name: string | null; avatar: string | null; isAgent: boolean } }) {
+  const initials = assignee.name?.charAt(0)?.toUpperCase() || '?'
 
-  if (assignee.avatar_url) {
+  if (assignee.isAgent) {
+    return (
+      <div
+        className="rounded-full flex-shrink-0 flex items-center justify-center bg-violet-200/60 dark:bg-violet-800/40 ring-1 ring-violet-300/50"
+        style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
+        title={assignee.name || 'Agent'}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-600 dark:text-violet-300"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+      </div>
+    )
+  }
+
+  if (assignee.avatar) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={assignee.avatar_url}
+        src={assignee.avatar}
         alt=""
         className="rounded-full flex-shrink-0 ring-1 ring-white/50"
         style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
@@ -492,7 +505,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
           onDoubleClick={() => onDoubleClick(item.id)}
         >
           <span className="truncate text-gray-700 dark:text-gray-200 flex-1 min-w-0">{item.title}</span>
-          {item.assignee && <AssigneeAvatar assignee={item.assignee} />}
+          {(() => { const d = getAssigneeDisplay(item); return d ? <AssigneeAvatar assignee={d} /> : null })()}
           <ArrowRight size={14} className="flex-shrink-0 ml-1" style={{ color: statusColor }} />
         </div>
 
@@ -650,7 +663,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
             <span className="truncate text-gray-700 dark:text-gray-200 flex-1 min-w-0">{item.title}</span>
           )}
           {!showText && <span className="flex-1" />}
-          {item.assignee && <AssigneeAvatar assignee={item.assignee} />}
+          {(() => { const d = getAssigneeDisplay(item); return d ? <AssigneeAvatar assignee={d} /> : null })()}
         </div>
 
         {/* 참조 바 (메인 바 아래에 표시 — 반대 모드의 날짜) */}

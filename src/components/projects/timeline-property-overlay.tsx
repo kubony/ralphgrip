@@ -60,7 +60,7 @@ export default function TimelinePropertyOverlay({
           {/* Slide-over panel */}
           <motion.div
             key="panel"
-            className="fixed right-0 top-0 bottom-0 w-[360px] bg-background border-l shadow-xl z-50"
+            className="fixed right-0 top-0 bottom-0 w-full sm:w-[28rem] bg-background border-l shadow-xl z-50"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}

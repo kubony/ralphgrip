@@ -20,7 +20,7 @@ export default async function ALMPage({ params, searchParams }: ALMPageProps) {
   // touchProjectView는 사이드이펙트이므로 fire-and-forget (렌더링 차단 제거)
   void touchProjectView(project.id)
 
-  const { statuses, trackers, members, workItems, currentUserId, linkedIssueStatuses } =
+  const { statuses, trackers, members, workItems, currentUserId, linkedIssueStatuses, agents } =
     await getProjectData(project.id)
 
   // ?item= 값이 숫자(번호)면 UUID로 변환, UUID면 그대로 사용
@@ -45,6 +45,7 @@ export default async function ALMPage({ params, searchParams }: ALMPageProps) {
       autoInsertDate={project.settings?.auto_insert_date !== false}
       initialSelectedItemId={resolvedItemId}
       linkedIssueStatuses={linkedIssueStatuses}
+      agents={agents}
     />
   )
 }

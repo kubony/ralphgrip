@@ -195,7 +195,9 @@ export const getProjectWorkItems = cache(async (projectId: string) => {
           tracker:trackers(*),
           status:statuses(*),
           assignee:profiles!work_items_assignee_id_fkey(id, full_name, avatar_url),
-          reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url)
+          reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url),
+          agent_assignee:agents!work_items_agent_assignee_id_fkey(id, name, display_name, avatar_url),
+          agent_reporter:agents!work_items_agent_reporter_id_fkey(id, name, display_name, avatar_url)
         `)
         .eq('project_id', projectId)
         .is('deleted_at', null)
@@ -285,7 +287,9 @@ export const getMyWorkItems = cache(async (userId: string, fullName?: string | n
           tracker:trackers(id, name, color),
           status:statuses(id, name, color, position, is_closed),
           assignee:profiles!work_items_assignee_id_fkey(id, full_name, avatar_url),
-          reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url)
+          reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url),
+          agent_assignee:agents!work_items_agent_assignee_id_fkey(id, name, display_name, avatar_url),
+          agent_reporter:agents!work_items_agent_reporter_id_fkey(id, name, display_name, avatar_url)
         `)
         .is('deleted_at', null)
 
@@ -503,9 +507,27 @@ export const getProjectCardSummaries = cache(async (projectIds: string[]) => {
   return new Map(Object.entries(record))
 })
 
+// 프로젝트 에이전트 목록 조회 (unstable_cache — 5분 TTL)
+export const getProjectAgents = cache(async (projectId: string) => {
+  return unstable_cache(
+    async () => {
+      const supabase = getServiceClient()
+      const { data } = await supabase
+        .from('agents')
+        .select('id, name, display_name, avatar_url')
+        .eq('project_id', projectId)
+        .eq('status', 'active')
+        .order('display_name')
+      return (data ?? []) as import('@/types/database').AgentRef[]
+    },
+    [`agents-${projectId}`],
+    { tags: [`project:${projectId}:meta`], revalidate: 300 }
+  )()
+})
+
 // 프로젝트 전체 데이터 병렬 조회 (합성 함수 — 내부 함수가 각각 캐시)
 export const getProjectData = cache(async (projectId: string) => {
-  const [statuses, trackers, members, workItems, user, linkCounts, linkedIssueStatuses] = await Promise.all([
+  const [statuses, trackers, members, workItems, user, linkCounts, linkedIssueStatuses, agents] = await Promise.all([
     getProjectStatuses(projectId),
     getProjectTrackers(projectId),
     getProjectMembers(projectId),
@@ -513,6 +535,7 @@ export const getProjectData = cache(async (projectId: string) => {
     getCurrentUser(),
     getWorkItemLinkCounts(projectId),
     getLinkedIssueWorstStatus(projectId),
+    getProjectAgents(projectId),
   ])
 
   return {
@@ -523,6 +546,7 @@ export const getProjectData = cache(async (projectId: string) => {
     currentUserId: user?.id,
     linkCounts,
     linkedIssueStatuses,
+    agents,
   }
 })
 
