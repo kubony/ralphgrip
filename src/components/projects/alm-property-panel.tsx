@@ -343,16 +343,20 @@ export function ALMPropertyPanel({
                     ? `agent:${workItem.agent_assignee.id}`
                     : 'unassigned'
               }
-              onValueChange={(value) => {
+              onValueChange={async (value) => {
+                setIsSaving(true)
+                let updates: Record<string, string | null>
                 if (value === 'unassigned') {
-                  handleFieldChange('assignee_id', null)
-                  handleFieldChange('agent_assignee_id', null)
+                  updates = { assignee_id: null, agent_assignee_id: null }
                 } else if (value.startsWith('agent:')) {
-                  handleFieldChange('agent_assignee_id', value.slice(6))
-                  handleFieldChange('assignee_id', null)
-                } else if (value.startsWith('profile:')) {
-                  handleFieldChange('assignee_id', value.slice(8))
-                  handleFieldChange('agent_assignee_id', null)
+                  updates = { agent_assignee_id: value.slice(6), assignee_id: null }
+                } else {
+                  updates = { assignee_id: value.slice(8), agent_assignee_id: null }
+                }
+                const result = await updateWorkItem(workItem.id, updates, projectId)
+                setIsSaving(false)
+                if (result?.error) {
+                  toast.error('저장에 실패했습니다.')
                 }
               }}
               disabled={isSaving}
@@ -372,10 +376,21 @@ export function ALMPropertyPanel({
                     {member.full_name || '이름 없음'}
                   </SelectItem>
                 ))}
-                {agents.length > 0 && (
-                  <div className="px-2 py-1 text-xs text-muted-foreground font-medium">에이전트</div>
+                {agents.filter((a) => a.category !== 'global').length > 0 && (
+                  <div className="px-2 py-1 text-xs text-muted-foreground font-medium">프로젝트 에이전트</div>
                 )}
-                {agents.map((agent) => (
+                {agents.filter((a) => a.category !== 'global').map((agent) => (
+                  <SelectItem key={agent.id} value={`agent:${agent.id}`}>
+                    <div className="flex items-center gap-1.5">
+                      <Bot className="h-3 w-3 text-violet-500 flex-shrink-0" />
+                      {agent.display_name}
+                    </div>
+                  </SelectItem>
+                ))}
+                {agents.filter((a) => a.category === 'global').length > 0 && (
+                  <div className="px-2 py-1 text-xs text-muted-foreground font-medium">글로벌 에이전트</div>
+                )}
+                {agents.filter((a) => a.category === 'global').map((agent) => (
                   <SelectItem key={agent.id} value={`agent:${agent.id}`}>
                     <div className="flex items-center gap-1.5">
                       <Bot className="h-3 w-3 text-violet-500 flex-shrink-0" />

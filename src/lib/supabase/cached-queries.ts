@@ -512,13 +512,26 @@ export const getProjectAgents = cache(async (projectId: string) => {
   return unstable_cache(
     async () => {
       const supabase = getServiceClient()
-      const { data } = await supabase
-        .from('agents')
-        .select('id, name, display_name, avatar_url')
-        .eq('project_id', projectId)
-        .eq('status', 'active')
-        .order('display_name')
-      return (data ?? []) as import('@/types/database').AgentRef[]
+      // 프로젝트 에이전트 + 글로벌 에이전트를 모두 조회
+      const [projectResult, globalResult] = await Promise.all([
+        supabase
+          .from('agents')
+          .select('id, name, display_name, avatar_url, category')
+          .eq('project_id', projectId)
+          .eq('status', 'active')
+          .order('display_name'),
+        supabase
+          .from('agents')
+          .select('id, name, display_name, avatar_url, category')
+          .is('project_id', null)
+          .eq('category', 'global')
+          .eq('status', 'active')
+          .order('display_name'),
+      ])
+      return [
+        ...(projectResult.data ?? []),
+        ...(globalResult.data ?? []),
+      ] as import('@/types/database').AgentRef[]
     },
     [`agents-${projectId}`],
     { tags: [`project:${projectId}:meta`], revalidate: 300 }

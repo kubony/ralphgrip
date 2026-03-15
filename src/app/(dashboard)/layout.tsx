@@ -1,4 +1,5 @@
 import { getCurrentUser, getUserProfile, getRecentNotifications, getUnreadNotificationCount } from '@/lib/supabase/cached-queries'
+import { getActiveAgentCount } from './agents/actions'
 import { Header } from '@/components/layout/header'
 import { CommandPalette } from '@/components/command-palette'
 import { ThemeProvider } from '@/hooks/use-theme'
@@ -21,14 +22,18 @@ export default async function DashboardLayout({
   let user: User | null = null
   let initialNotifications: Awaited<ReturnType<typeof getRecentNotifications>> = []
   let initialUnreadCount = 0
+  let activeAgentCount = 0
 
   if (authUser) {
     // 캐시된 프로필 조회 + 알림 데이터 병렬 조회
-    const [profile, notifications, unreadCount] = await Promise.all([
+    const [profile, notifications, unreadCount, agentCount] = await Promise.all([
       getUserProfile(authUser.id),
       getRecentNotifications(authUser.id),
       getUnreadNotificationCount(authUser.id),
+      getActiveAgentCount(),
     ])
+
+    activeAgentCount = agentCount
 
     initialNotifications = notifications
     initialUnreadCount = unreadCount
@@ -54,6 +59,7 @@ export default async function DashboardLayout({
             userId={authUser?.id ?? null}
             initialNotifications={initialNotifications}
             initialUnreadCount={initialUnreadCount}
+            activeAgentCount={activeAgentCount}
           />
         </div>
         <CommandPalette />

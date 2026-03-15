@@ -7,6 +7,7 @@ import Search from 'lucide-react/dist/esm/icons/search'
 import FolderKanban from 'lucide-react/dist/esm/icons/folder-kanban'
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list'
 import BarChart3 from 'lucide-react/dist/esm/icons/bar-chart-3'
+import Bot from 'lucide-react/dist/esm/icons/bot'
 import { UserMenu } from './user-menu'
 import { NotificationBell } from './notification-bell'
 import { cn } from '@/lib/utils'
@@ -22,6 +23,7 @@ interface HeaderProps {
   userId?: string | null
   initialNotifications?: NotificationItem[]
   initialUnreadCount?: number
+  activeAgentCount?: number
 }
 
 const navItems = [
@@ -30,28 +32,28 @@ const navItems = [
   { href: '/pipeline', label: '사업현황', icon: BarChart3 },
 ]
 
-export function Header({ user, userId, initialNotifications, initialUnreadCount }: HeaderProps) {
+export function Header({ user, userId, initialNotifications, initialUnreadCount, activeAgentCount = 0 }: HeaderProps) {
   const pathname = usePathname()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-6">
         {/* Logo */}
-        <Link href="/my-work" className="flex items-center">
+        <Link href="/my-work" className="flex items-center shrink-0">
           <Image
             src="/images/logo.svg"
-            alt="AgentGrip"
-            width={140}
-            height={28}
-            className="h-7 w-auto dark:hidden"
+            alt="RalphGrip"
+            width={180}
+            height={36}
+            className="h-9 w-auto dark:hidden"
             priority
           />
           <Image
             src="/images/logo-dark.svg"
-            alt="AgentGrip"
-            width={140}
-            height={28}
-            className="h-7 w-auto hidden dark:block"
+            alt="RalphGrip"
+            width={180}
+            height={36}
+            className="h-9 w-auto hidden dark:block"
             priority
           />
         </Link>
@@ -95,6 +97,25 @@ export function Header({ user, userId, initialNotifications, initialUnreadCount 
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Agents */}
+        <Link
+          href="/agents"
+          className={cn(
+            'relative flex items-center justify-center h-9 w-9 rounded-md transition-colors',
+            pathname.startsWith('/agents')
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+          title="AI Agents"
+        >
+          <Bot className="h-5 w-5" />
+          {activeAgentCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-violet-500 px-1 text-[10px] font-medium text-white">
+              {activeAgentCount}
+            </span>
+          )}
+        </Link>
 
         {/* Notifications */}
         {userId && (

@@ -83,6 +83,52 @@ export interface AgentRef {
   name: string
   display_name: string
   avatar_url: string | null
+  category?: AgentCategory
+  owner_id?: string | null
+}
+
+// 에이전트 카테고리
+export type AgentCategory = 'global' | 'owned' | 'restricted'
+
+// 에이전트 상세 (에이전트 관리 페이지용)
+export interface AgentDetail {
+  id: string
+  name: string
+  display_name: string
+  avatar_url: string | null
+  description: string | null
+  agent_kind: string
+  agent_model: string | null
+  agent_role: string
+  agent_runtime: string
+  status: AgentStatus
+  category: AgentCategory
+  owner_id: string | null
+  project_id: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+  owner?: PersonRef | null
+  project?: { id: string; key: string; name: string } | null
+}
+
+// 에이전트 로그
+export interface AgentLogEntry {
+  id: string
+  agent_id: string
+  action: string
+  details: Record<string, unknown> | null
+  created_at: string
+}
+
+// 에이전트 권한
+export interface AgentPermissionEntry {
+  id: string
+  agent_id: string
+  user_id: string
+  granted_by: string | null
+  granted_at: string
+  user?: PersonRef | null
 }
 
 // 트래커 서브셋 (컴포넌트 표시용)
@@ -229,5 +275,8 @@ export type ProjectMember = ProjectMemberRow
 export type WorkItemAuditLog = WorkItemAuditLogRow
 export type ProjectAuditLog = ProjectAuditLogRow
 
-// Agent types (agents table added in migration 030)
+// Agent types (agents table added in migration 030, extended in 031)
 export type AgentStatus = 'active' | 'inactive' | 'revoked'
+export type AgentRow = Tables<'agents'>
+export type AgentLogRow = Tables<'agent_logs'>
+export type AgentPermissionRow = Tables<'agent_permissions'>

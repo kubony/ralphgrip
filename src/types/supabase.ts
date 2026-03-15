@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_logs: {
+        Row: {
+          action: string
+          agent_id: string
+          created_at: string
+          details: Json | null
+          id: string
+        }
+        Insert: {
+          action: string
+          agent_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          agent_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_permissions: {
+        Row: {
+          agent_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_permissions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           agent_kind: string
@@ -23,13 +101,15 @@ export type Database = {
           api_key_hash: string | null
           api_key_prefix: string | null
           avatar_url: string | null
+          category: string
           created_at: string
           description: string | null
           display_name: string
           id: string
           metadata: Json | null
           name: string
-          project_id: string
+          owner_id: string | null
+          project_id: string | null
           status: Database["public"]["Enums"]["agent_status"]
           updated_at: string
         }
@@ -41,13 +121,15 @@ export type Database = {
           api_key_hash?: string | null
           api_key_prefix?: string | null
           avatar_url?: string | null
+          category?: string
           created_at?: string
           description?: string | null
           display_name: string
           id?: string
           metadata?: Json | null
           name: string
-          project_id: string
+          owner_id?: string | null
+          project_id?: string | null
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
         }
@@ -59,17 +141,26 @@ export type Database = {
           api_key_hash?: string | null
           api_key_prefix?: string | null
           avatar_url?: string | null
+          category?: string
           created_at?: string
           description?: string | null
           display_name?: string
           id?: string
           metadata?: Json | null
           name?: string
-          project_id?: string
+          owner_id?: string | null
+          project_id?: string | null
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "agents_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "agents_project_id_fkey"
             columns: ["project_id"]
@@ -1207,6 +1298,7 @@ export type Database = {
       }
       restore_project: { Args: { p_project_id: string }; Returns: boolean }
       restore_work_item: { Args: { p_work_item_id: string }; Returns: boolean }
+      set_agent_session: { Args: { agent_id: string }; Returns: undefined }
       soft_delete_project: { Args: { p_project_id: string }; Returns: boolean }
       soft_delete_work_item: {
         Args: { p_work_item_id: string }
