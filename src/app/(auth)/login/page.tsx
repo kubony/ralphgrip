@@ -2,78 +2,13 @@
 
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 const ERROR_MESSAGES: Record<string, string> = {
   domain_not_allowed: '허용되지 않은 계정입니다.',
   auth_failed: '로그인에 실패했습니다. 다시 시도해주세요.',
-}
-
-function RalphMascot({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 200 280" className={className} xmlns="http://www.w3.org/2000/svg">
-      {/* === FULL BODY RALPH (Simpsons style) === */}
-
-      {/* Shoes */}
-      <ellipse cx="75" cy="268" rx="18" ry="8" fill="#6B7280" stroke="#374151" strokeWidth="1.5" />
-      <ellipse cx="125" cy="268" rx="18" ry="8" fill="#6B7280" stroke="#374151" strokeWidth="1.5" />
-
-      {/* Legs / Blue shorts */}
-      <rect x="68" y="230" width="22" height="40" rx="6" fill="#4A90D9" stroke="#2C5F8A" strokeWidth="1.5" />
-      <rect x="110" y="230" width="22" height="40" rx="6" fill="#4A90D9" stroke="#2C5F8A" strokeWidth="1.5" />
-
-      {/* Body / Light blue shirt */}
-      <ellipse cx="100" cy="210" rx="48" ry="38" fill="#7ECFCF" stroke="#5BA8A8" strokeWidth="1.5" />
-      {/* Shirt collar */}
-      <path d="M80 178 Q100 188 120 178" stroke="#5BA8A8" strokeWidth="1.5" fill="none" />
-
-      {/* Belt */}
-      <rect x="55" y="225" width="90" height="8" rx="2" fill="#9CA3AF" stroke="#6B7280" strokeWidth="1" />
-      <rect x="94" y="223" width="12" height="12" rx="2" fill="#EF4444" stroke="#B91C1C" strokeWidth="0.8" />
-
-      {/* Arms (yellow, Simpsons skin) */}
-      <path d="M52 195 Q30 200, 25 220" stroke="#FFD90F" strokeWidth="16" fill="none" strokeLinecap="round" />
-      <path d="M148 195 Q170 200, 175 220" stroke="#FFD90F" strokeWidth="16" fill="none" strokeLinecap="round" />
-      {/* Hands */}
-      <circle cx="25" cy="224" r="10" fill="#FFD90F" stroke="#C9A200" strokeWidth="1" />
-      <circle cx="175" cy="224" r="10" fill="#FFD90F" stroke="#C9A200" strokeWidth="1" />
-
-      {/* Head */}
-      <ellipse cx="100" cy="100" rx="58" ry="62" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.5" />
-
-      {/* Hair spikes (same yellow, outlined) */}
-      <polygon points="50,55 58,18 70,50 82,10 94,48 106,5 118,48 130,12 142,52 150,20 155,58" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.5" strokeLinejoin="round" />
-
-      {/* Ear left */}
-      <ellipse cx="44" cy="105" rx="10" ry="12" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.2" />
-      {/* Ear right */}
-      <ellipse cx="156" cy="105" rx="10" ry="12" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.2" />
-
-      {/* Eyes */}
-      <ellipse cx="78" cy="95" rx="16" ry="18" fill="white" stroke="#2C2C2C" strokeWidth="1.5" />
-      <ellipse cx="122" cy="95" rx="16" ry="18" fill="white" stroke="#2C2C2C" strokeWidth="1.5" />
-      {/* Pupils (slightly looking to side) */}
-      <circle cx="82" cy="98" r="6.5" fill="#2C2C2C" />
-      <circle cx="126" cy="98" r="6.5" fill="#2C2C2C" />
-      {/* Eye highlight */}
-      <circle cx="80" cy="94" r="2.5" fill="white" />
-      <circle cx="124" cy="94" r="2.5" fill="white" />
-
-      {/* Nose */}
-      <ellipse cx="100" cy="112" rx="8" ry="5" fill="#E8BE00" stroke="#C9A200" strokeWidth="1" />
-
-      {/* Mouth - overbite expression */}
-      <path d="M74 130 Q100 145, 126 130" stroke="#8B6508" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      {/* Teeth (overbite) */}
-      <rect x="86" y="129" width="28" height="10" rx="2" fill="white" stroke="#8B6508" strokeWidth="1" />
-      <line x1="100" y1="129" x2="100" y2="139" stroke="#8B6508" strokeWidth="0.8" />
-
-      {/* Finger near mouth (classic Ralph pose) */}
-      <path d="M25 224 Q35 200, 75 135" stroke="#FFD90F" strokeWidth="10" fill="none" strokeLinecap="round" />
-      <circle cx="75" cy="133" r="6" fill="#FFD90F" stroke="#C9A200" strokeWidth="0.8" />
-    </svg>
-  )
 }
 
 function LoginForm() {
@@ -103,7 +38,14 @@ function LoginForm() {
   return (
     <div className="flex flex-col items-center gap-6">
       {/* Mascot */}
-      <RalphMascot className="w-44 h-56 drop-shadow-lg" />
+      <Image
+        src="/images/ralph-logo.png"
+        alt="Ralph"
+        width={176}
+        height={224}
+        className="w-44 h-56 object-contain drop-shadow-lg"
+        priority
+      />
 
       {/* Login Card */}
       <div className="w-full max-w-sm bg-white/90 dark:bg-card/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-border p-8 space-y-6">

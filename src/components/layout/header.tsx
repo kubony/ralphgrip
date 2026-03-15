@@ -39,23 +39,24 @@ export function Header({ user, userId, initialNotifications, initialUnreadCount,
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-6">
         {/* Logo */}
-        <Link href="/my-work" className="flex items-center shrink-0">
+        <Link href="/my-work" className="flex items-center gap-2 shrink-0">
           <Image
-            src="/images/logo.svg"
+            src="/images/ralph-logo.png"
             alt="RalphGrip"
-            width={180}
+            width={36}
             height={36}
-            className="h-9 w-auto dark:hidden"
+            className="h-9 w-9 rounded-md dark:hidden"
             priority
           />
           <Image
-            src="/images/logo-dark.svg"
+            src="/images/ralph-logo-dark.webp"
             alt="RalphGrip"
-            width={180}
+            width={36}
             height={36}
-            className="h-9 w-auto hidden dark:block"
+            className="h-9 w-9 rounded-md hidden dark:block"
             priority
           />
+          <span className="text-lg font-bold">RalphGrip</span>
         </Link>
 
         {/* Navigation */}

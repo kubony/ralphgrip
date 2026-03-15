@@ -20,11 +20,9 @@ export const metadata: Metadata = {
   description: "프로젝트를 즐겁게 관리하는 방법 — RalphGrip",
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: '32x32' },
-      { url: '/favicon.png', sizes: '192x192' },
+      { url: '/favicon.png', type: 'image/png' },
     ],
-    apple: '/images/icon.png',
+    apple: '/favicon.png',
   },
 };
 
