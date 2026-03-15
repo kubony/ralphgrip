@@ -1,9 +1,0 @@
-{
-  "pid": 40942,
-  "started_at": "2026-03-07T02:17:55.653Z",
-  "cwd": "/Users/inkeun/projects/worvk",
-  "notify_script": "/opt/homebrew/lib/node_modules/oh-my-codex/scripts/notify-hook.js",
-  "poll_ms": 700,
-  "tracked_files": 10,
-  "seen_turns": 2
-}

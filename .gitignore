@@ -45,6 +45,7 @@ yarn-error.log*
 .claude/
 .codex/
 .gemini/
+.omx/
 .opencode/
 .windsurf/
 
