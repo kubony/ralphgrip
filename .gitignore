@@ -48,6 +48,7 @@ yarn-error.log*
 .omx/
 .opencode/
 .windsurf/
+mcp-server/
 
 # fonts (downloaded at build time)
 /public/fonts/*.ttf
