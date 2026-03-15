@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Worvk에 5번째 뷰로 타임라인(간트차트)을 추가하여 work_items의 시간적 구조를 시각화한다.
+**Goal:** AgentGrip에 5번째 뷰로 타임라인(간트차트)을 추가하여 work_items의 시간적 구조를 시각화한다.
 
 **Architecture:** 단일 스크롤 컨테이너 + CSS sticky로 좌측 항목 리스트 / 상단 시간축 헤더를 고정. 간트 바는 div 기반으로 자체 구현. 바 드래그는 네이티브 pointer events. 기존 filteredWorkItems, useALMSelection, useWorkItemFilters 훅을 100% 재사용.
 

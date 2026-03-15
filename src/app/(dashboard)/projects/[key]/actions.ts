@@ -829,7 +829,7 @@ export async function getComments(workItemId: string) {
     .select(`
       *,
       author:profiles!author_id(id, full_name, avatar_url),
-      agent:agents!agent_id(id, display_name, avatar_url, agent_type)
+      agent:agents!agent_id(id, display_name, avatar_url, agent_kind)
     `)
     .eq('work_item_id', workItemId)
     .order('created_at', { ascending: true })
@@ -1678,7 +1678,7 @@ export async function getAgents(projectId: string) {
 
 export async function createAgent(
   projectId: string,
-  input: { name: string; display_name: string; agent_type: string; description?: string },
+  input: { name: string; display_name: string; agent_kind: string; agent_role: string; agent_model?: string; agent_runtime: string; description?: string },
 ) {
   const { error: authError, supabase } = await requireAdminAccess(projectId)
   if (authError || !supabase) return { error: authError }
@@ -1697,7 +1697,10 @@ export async function createAgent(
       project_id: projectId,
       name: input.name,
       display_name: input.display_name,
-      agent_type: input.agent_type,
+      agent_kind: input.agent_kind,
+      agent_role: input.agent_role,
+      agent_model: input.agent_model || null,
+      agent_runtime: input.agent_runtime,
       description: input.description ?? null,
       api_key_hash: apiKeyHash,
       api_key_prefix: prefix,
@@ -1712,7 +1715,7 @@ export async function createAgent(
 export async function updateAgent(
   agentId: string,
   projectId: string,
-  input: { display_name?: string; agent_type?: string; status?: string; description?: string },
+  input: { display_name?: string; agent_kind?: string; agent_role?: string; agent_model?: string | null; agent_runtime?: string; status?: string; description?: string },
 ) {
   const { error: authError, supabase } = await requireAdminAccess(projectId)
   if (authError || !supabase) return { error: authError }

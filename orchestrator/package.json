@@ -1,0 +1,32 @@
+{
+  "name": "@agentgrip/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AgentGrip orchestrator — polls work_items and runs Claude Code agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "agentgrip-orchestrator": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "fastify": "^5.2.1",
+    "liquidjs": "^10.21.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
+  }
+}

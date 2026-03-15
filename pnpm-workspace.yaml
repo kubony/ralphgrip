@@ -1,3 +1,7 @@
+packages:
+  - "mcp-server"
+  - "orchestrator"
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver

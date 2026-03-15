@@ -31,8 +31,7 @@ export function UserManagement({ users, currentUserId }: UserManagementProps) {
   const [isPending, startTransition] = useTransition()
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
 
-  const internalUsers = users.filter(u => u.email.endsWith('@maum.ai'))
-  const externalUsers = users.filter(u => !u.email.endsWith('@maum.ai'))
+  const allUsers = users
 
   const handleRoleChange = (userId: string, newRole: string) => {
     setUpdatingUserId(userId)
@@ -109,24 +108,13 @@ export function UserManagement({ users, currentUserId }: UserManagementProps) {
         </p>
       </div>
 
-      {internalUsers.length > 0 && (
+      {allUsers.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-            maum.ai ({internalUsers.length})
+            전체 사용자 ({allUsers.length})
           </h2>
           <div className="space-y-2">
-            {internalUsers.map(renderUserRow)}
-          </div>
-        </section>
-      )}
-
-      {externalUsers.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-            External ({externalUsers.length})
-          </h2>
-          <div className="space-y-2">
-            {externalUsers.map(renderUserRow)}
+            {allUsers.map(renderUserRow)}
           </div>
         </section>
       )}

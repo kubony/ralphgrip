@@ -32,7 +32,10 @@ interface Agent {
   name: string
   display_name: string
   avatar_url: string | null
-  agent_type: string
+  agent_kind: string
+  agent_role: string
+  agent_model: string | null
+  agent_runtime: string
   status: AgentStatus
   api_key_prefix: string | null
   description: string | null
@@ -44,11 +47,40 @@ interface AgentsSettingsProps {
   initialAgents: Agent[]
 }
 
-const agentTypes = [
-  { value: 'mcp', label: 'MCP' },
+const agentRoles = [
+  { value: 'developer', label: 'Developer' },
+  { value: 'reviewer', label: 'Reviewer' },
+  { value: 'tester', label: 'Tester' },
+  { value: 'pm', label: 'PM' },
+  { value: 'analyst', label: 'Analyst' },
+  { value: 'ai-researcher', label: 'AI Researcher' },
+  { value: 'devops', label: 'DevOps' },
+]
+
+const agentModels = [
+  { value: '', label: '미지정' },
+  { value: 'claude-opus-4.6', label: 'Claude Opus 4.6' },
+  { value: 'claude-sonnet-4.6', label: 'Claude Sonnet 4.6' },
+  { value: 'gpt-4o', label: 'GPT-4o' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  { value: 'codex', label: 'Codex' },
+  { value: 'deepseek-r1', label: 'DeepSeek R1' },
+]
+
+const agentKinds = [
+  { value: 'claude-code', label: 'Claude Code' },
   { value: 'openclaw', label: 'OpenClaw' },
-  { value: 'orchestrator', label: 'Orchestrator' },
+  { value: 'aider', label: 'Aider' },
+  { value: 'codex-cli', label: 'Codex CLI' },
   { value: 'custom', label: 'Custom' },
+]
+
+const agentRuntimes = [
+  { value: 'local', label: 'Local' },
+  { value: 'gcp-vm', label: 'GCP VM' },
+  { value: 'gcp-cloud-run', label: 'GCP Cloud Run' },
+  { value: 'aws-ec2', label: 'AWS EC2' },
+  { value: 'edge', label: 'Edge Function' },
 ]
 
 export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps) {
@@ -61,8 +93,21 @@ export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps
   // Form state
   const [name, setName] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [agentType, setAgentType] = useState('mcp')
+  const [agentKind, setAgentKind] = useState('claude-code')
+  const [agentRole, setAgentRole] = useState('developer')
+  const [agentModel, setAgentModel] = useState('')
+  const [agentRuntime, setAgentRuntime] = useState('local')
   const [description, setDescription] = useState('')
+
+  const resetForm = () => {
+    setName('')
+    setDisplayName('')
+    setAgentKind('claude-code')
+    setAgentRole('developer')
+    setAgentModel('')
+    setAgentRuntime('local')
+    setDescription('')
+  }
 
   const loadAgents = useCallback(async () => {
     const result = await getAgents(projectId)
@@ -79,17 +124,17 @@ export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps
       const result = await createAgent(projectId, {
         name: name.trim(),
         display_name: displayName.trim(),
-        agent_type: agentType,
+        agent_kind: agentKind,
+        agent_role: agentRole,
+        agent_model: agentModel || undefined,
+        agent_runtime: agentRuntime,
         description: description.trim() || undefined,
       })
       if (result.error) {
         toast.error(result.error)
       } else {
         setNewApiKey(result.apiKey ?? null)
-        setName('')
-        setDisplayName('')
-        setDescription('')
-        setAgentType('mcp')
+        resetForm()
         await loadAgents()
         if (!result.apiKey) setDialogOpen(false)
       }
@@ -153,6 +198,9 @@ export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps
     toast.success('클립보드에 복사했습니다.')
   }
 
+  const getLabelForValue = (options: { value: string; label: string }[], value: string | null) =>
+    options.find((o) => o.value === value)?.label ?? value
+
   return (
     <section id="agents" className="space-y-4">
       <div className="flex items-center justify-between">
@@ -192,24 +240,63 @@ export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>내부 이름</Label>
-                  <Input placeholder="예: openclaw-coder-1" value={name} onChange={(e) => setName(e.target.value)} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>내부 이름</Label>
+                    <Input placeholder="예: openclaw-coder-1" value={name} onChange={(e) => setName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>표시명</Label>
+                    <Input placeholder="예: OpenClaw 코더" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>표시명</Label>
-                  <Input placeholder="예: OpenClaw 코더" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>역할</Label>
+                    <Select value={agentRole} onValueChange={setAgentRole}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {agentRoles.map((r) => (
+                          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>AI 모델</Label>
+                    <Select value={agentModel} onValueChange={setAgentModel}>
+                      <SelectTrigger><SelectValue placeholder="미지정" /></SelectTrigger>
+                      <SelectContent>
+                        {agentModels.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>타입</Label>
-                  <Select value={agentType} onValueChange={setAgentType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {agentTypes.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>종류</Label>
+                    <Select value={agentKind} onValueChange={setAgentKind}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {agentKinds.map((k) => (
+                          <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>실행환경</Label>
+                    <Select value={agentRuntime} onValueChange={setAgentRuntime}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {agentRuntimes.map((rt) => (
+                          <SelectItem key={rt.value} value={rt.value}>{rt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>설명 (선택)</Label>
@@ -229,7 +316,7 @@ export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps
           <TableHeader>
             <TableRow>
               <TableHead>에이전트</TableHead>
-              <TableHead>타입</TableHead>
+              <TableHead>설정</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>API 키</TableHead>
               <TableHead className="w-24" />
@@ -248,7 +335,12 @@ export function AgentsSettings({ projectId, initialAgents }: AgentsSettingsProps
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="text-xs">{agent.agent_type}</Badge>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-xs">{getLabelForValue(agentRoles, agent.agent_role)}</Badge>
+                    {agent.agent_model && <Badge variant="secondary" className="text-xs">{getLabelForValue(agentModels, agent.agent_model)}</Badge>}
+                    <Badge variant="outline" className="text-xs">{getLabelForValue(agentKinds, agent.agent_kind)}</Badge>
+                    <Badge variant="outline" className="text-xs">{getLabelForValue(agentRuntimes, agent.agent_runtime)}</Badge>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Select value={agent.status} onValueChange={(v) => handleStatusChange(agent, v)}>

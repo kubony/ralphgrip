@@ -45,19 +45,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  const ALLOWED_EMAILS = ['kubony@gmail.com']
-  if (
-    user &&
-    isProtectedRoute &&
-    !user.email?.endsWith('@maum.ai') &&
-    !ALLOWED_EMAILS.includes(user.email ?? '')
-  ) {
-    await supabase.auth.signOut()
-    return NextResponse.redirect(
-      new URL('/login?error=domain_not_allowed', request.url)
-    )
-  }
-
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL('/my-work', request.url))
   }

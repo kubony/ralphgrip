@@ -1,4 +1,4 @@
-# Worvk - Product Requirements Document
+# AgentGrip - Product Requirements Document
 
 **버전**: 1.0
 **작성일**: 2026-02-02
@@ -10,7 +10,7 @@
 
 ### 1.1. 제품 비전
 
-**Worvk**는 Jira의 구조화된 프로젝트 관리와 AI 기능을 결합한 차세대 프로젝트 관리 도구이다.
+**AgentGrip**는 Jira의 구조화된 프로젝트 관리와 AI 기능을 결합한 차세대 프로젝트 관리 도구이다.
 
 **해결하는 문제**
 
@@ -76,7 +76,7 @@
 **1차 타겟 (MVP)**
 
 - 내부 개발팀: 서인근, 김다혜
-- 2인 개발팀으로 Worvk 자체 개발에 사용
+- 2인 개발팀으로 AgentGrip 자체 개발에 사용
 
 **2차 타겟 (향후)**
 

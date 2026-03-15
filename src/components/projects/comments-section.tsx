@@ -34,7 +34,7 @@ interface CommentAgent {
   id: string
   display_name: string
   avatar_url: string | null
-  agent_type: string
+  agent_kind: string
 }
 
 interface Comment {

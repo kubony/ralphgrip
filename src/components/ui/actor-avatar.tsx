@@ -10,7 +10,7 @@ interface ActorProfile {
 interface ActorAgent {
   display_name: string
   avatar_url: string | null
-  agent_type: string
+  agent_kind: string
 }
 
 interface ActorAvatarProps {

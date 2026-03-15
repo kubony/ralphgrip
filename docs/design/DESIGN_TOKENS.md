@@ -1,6 +1,6 @@
-# Worvk Design Tokens
+# AgentGrip Design Tokens
 
-이 문서는 Worvk 디자인 시스템의 **single source of truth**이다. 모든 시맨틱 토큰은 `src/app/globals.css`에 CSS 변수로 정의되며, `/design-system` 페이지에서 라이브 프리뷰를 확인할 수 있다.
+이 문서는 AgentGrip 디자인 시스템의 **single source of truth**이다. 모든 시맨틱 토큰은 `src/app/globals.css`에 CSS 변수로 정의되며, `/design-system` 페이지에서 라이브 프리뷰를 확인할 수 있다.
 
 ---
 

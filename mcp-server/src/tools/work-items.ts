@@ -85,7 +85,7 @@ export function registerWorkItemTools(server: McpServer) {
   // ── create_task ──
   server.tool(
     'create_task',
-    'Create a new task (work item) in the madspeed project. Use tracker and status names (e.g., "Task", "To Do") — UUIDs are resolved automatically.',
+    'Create a new task (work item) in the AgentGrip project. Use tracker and status names (e.g., "Task", "To Do") — UUIDs are resolved automatically.',
     {
       title: z.string().describe('Task title'),
       description: z.string().optional().describe('Task description (markdown supported)'),
@@ -198,7 +198,7 @@ export function registerWorkItemTools(server: McpServer) {
         // Set agent context for audit log trigger
         const actorIds = await getActorIds()
         if (actorIds.agentId) {
-          await supabase.rpc('set_config', { setting: 'app.current_agent_id', value: actorIds.agentId }).throwOnError()
+          await supabase.rpc('set_agent_session', { agent_id: actorIds.agentId })
         }
 
         const workItem = await resolveWorkItemByNumber(projectId, args.number)
@@ -359,6 +359,65 @@ export function registerWorkItemTools(server: McpServer) {
           type: 'text' as const,
           text: JSON.stringify(data, null, 2),
         }],
+      }
+    }
+  )
+
+  // ── add_comment ──
+  server.tool(
+    'add_comment',
+    'Add a comment to a task by its number. If running as an agent (MADSPEED_AGENT_ID set), the comment is attributed to the agent.',
+    {
+      number: z.number().describe('Work item number (e.g., 42)'),
+      content: z.string().describe('Comment content (markdown supported)'),
+    },
+    async (args) => {
+      const projectId = getProjectId()
+
+      try {
+        const [workItem, actorIds] = await Promise.all([
+          resolveWorkItemByNumber(projectId, args.number),
+          getActorIds(),
+        ])
+
+        const insertData: Record<string, unknown> = {
+          work_item_id: workItem.id,
+          content: args.content,
+        }
+
+        if (actorIds.agentId) {
+          // Set agent session context for RLS/triggers
+          await supabase.rpc('set_agent_session', { agent_id: actorIds.agentId })
+          insertData.agent_id = actorIds.agentId
+        } else {
+          // Fall back to project owner as author
+          const ownerId = await getProjectOwnerId()
+          insertData.author_id = ownerId
+        }
+
+        const { data, error } = await supabase
+          .from('comments')
+          .insert(insertData)
+          .select('id, content, created_at')
+          .single()
+
+        if (error) {
+          return { content: [{ type: 'text' as const, text: `Error adding comment: ${error.message}` }] }
+        }
+
+        return {
+          content: [{
+            type: 'text' as const,
+            text: JSON.stringify({
+              success: true,
+              comment: data,
+              message: `Added comment to task #${args.number}`,
+            }, null, 2),
+          }],
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        return { content: [{ type: 'text' as const, text: `Error: ${msg}` }] }
       }
     }
   )

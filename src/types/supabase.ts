@@ -10,45 +10,85 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
-      comment_reads: {
+      agents: {
         Row: {
-          comment_id: string
-          read_at: string
-          user_id: string
+          agent_kind: string
+          agent_model: string | null
+          agent_role: string
+          agent_runtime: string
+          api_key_hash: string | null
+          api_key_prefix: string | null
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          metadata: Json | null
+          name: string
+          project_id: string
+          status: Database["public"]["Enums"]["agent_status"]
+          updated_at: string
         }
         Insert: {
-          comment_id: string
-          read_at?: string
-          user_id: string
+          agent_kind?: string
+          agent_model?: string | null
+          agent_role?: string
+          agent_runtime?: string
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          project_id: string
+          status?: Database["public"]["Enums"]["agent_status"]
+          updated_at?: string
         }
         Update: {
-          comment_id?: string
-          read_at?: string
-          user_id?: string
+          agent_kind?: string
+          agent_model?: string | null
+          agent_role?: string
+          agent_runtime?: string
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["agent_status"]
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "comment_reads_comment_id_fkey"
-            columns: ["comment_id"]
+            foreignKeyName: "agents_project_id_fkey"
+            columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "comments"
+            referencedRelation: "active_projects"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "comment_reads_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "agents_project_id_fkey"
+            columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
       }
       comments: {
         Row: {
+          agent_id: string | null
           attachments: Json | null
           author_id: string | null
           content: string
@@ -59,6 +99,7 @@ export type Database = {
           work_item_id: string
         }
         Insert: {
+          agent_id?: string | null
           attachments?: Json | null
           author_id?: string | null
           content: string
@@ -69,6 +110,7 @@ export type Database = {
           work_item_id: string
         }
         Update: {
+          agent_id?: string | null
           attachments?: Json | null
           author_id?: string | null
           content?: string
@@ -79,6 +121,13 @@ export type Database = {
           work_item_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_author_id_fkey"
             columns: ["author_id"]
@@ -102,100 +151,54 @@ export type Database = {
           },
         ]
       }
-      notifications: {
+      folders: {
         Row: {
-          actor_id: string | null
-          body: string | null
-          comment_id: string | null
           created_at: string
           id: string
-          project_id: string | null
-          project_key: string
-          read_at: string | null
-          title: string
-          type: string
-          user_id: string
-          work_item_id: string | null
-          work_item_number: number
+          name: string
+          parent_id: string | null
+          position: number
+          project_id: string
+          updated_at: string
         }
         Insert: {
-          actor_id?: string | null
-          body?: string | null
-          comment_id?: string | null
           created_at?: string
           id?: string
-          project_id?: string | null
-          project_key: string
-          read_at?: string | null
-          title: string
-          type: string
-          user_id: string
-          work_item_id?: string | null
-          work_item_number: number
+          name: string
+          parent_id?: string | null
+          position?: number
+          project_id: string
+          updated_at?: string
         }
         Update: {
-          actor_id?: string | null
-          body?: string | null
-          comment_id?: string | null
           created_at?: string
           id?: string
-          project_id?: string | null
-          project_key?: string
-          read_at?: string | null
-          title?: string
-          type?: string
-          user_id?: string
-          work_item_id?: string | null
-          work_item_number?: number
+          name?: string
+          parent_id?: string | null
+          position?: number
+          project_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_actor_id_fkey"
-            columns: ["actor_id"]
+            foreignKeyName: "folders_parent_id_fkey"
+            columns: ["parent_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "folders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notifications_comment_id_fkey"
-            columns: ["comment_id"]
-            isOneToOne: false
-            referencedRelation: "comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_project_id_fkey"
+            foreignKeyName: "folders_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "active_projects"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notifications_project_id_fkey"
+            foreignKeyName: "folders_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_work_item_id_fkey"
-            columns: ["work_item_id"]
-            isOneToOne: false
-            referencedRelation: "active_work_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_work_item_id_fkey"
-            columns: ["work_item_id"]
-            isOneToOne: false
-            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
@@ -279,6 +282,20 @@ export type Database = {
             columns: ["changed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_audit_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "active_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_audit_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -569,6 +586,7 @@ export type Database = {
       }
       work_item_audit_logs: {
         Row: {
+          agent_id: string | null
           changed_at: string
           changed_by: string | null
           changed_fields: string[]
@@ -581,6 +599,7 @@ export type Database = {
           work_item_id: string
         }
         Insert: {
+          agent_id?: string | null
           changed_at?: string
           changed_by?: string | null
           changed_fields?: string[]
@@ -593,6 +612,7 @@ export type Database = {
           work_item_id: string
         }
         Update: {
+          agent_id?: string | null
           changed_at?: string
           changed_by?: string | null
           changed_fields?: string[]
@@ -606,10 +626,45 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "work_item_audit_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "work_item_audit_logs_changed_by_fkey"
             columns: ["changed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_audit_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "active_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_audit_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_audit_logs_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "active_work_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_item_audit_logs_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
             referencedColumns: ["id"]
           },
         ]
@@ -721,18 +776,20 @@ export type Database = {
           actual_end_date: string | null
           actual_hours: number | null
           actual_start_date: string | null
+          agent_assignee_id: string | null
+          agent_reporter_id: string | null
           ai_metadata: Json | null
           assignee_id: string | null
           created_at: string
-          created_by_ai: boolean
+          created_by_ai: boolean | null
           deleted_at: string | null
           description: string | null
           due_date: string | null
           estimated_hours: number | null
-          external_links: Json | null
           external_url: string | null
+          folder_id: string | null
           id: string
-          level: number
+          level: number | null
           number: number
           parent_id: string | null
           position: number
@@ -740,28 +797,30 @@ export type Database = {
           project_id: string
           reporter_id: string
           start_date: string | null
-          status_id: string | null
+          status_id: string
           title: string
           tracker_id: string
           updated_at: string
-          visibility: string
+          visibility: string | null
         }
         Insert: {
           actual_end_date?: string | null
           actual_hours?: number | null
           actual_start_date?: string | null
+          agent_assignee_id?: string | null
+          agent_reporter_id?: string | null
           ai_metadata?: Json | null
           assignee_id?: string | null
           created_at?: string
-          created_by_ai?: boolean
+          created_by_ai?: boolean | null
           deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           estimated_hours?: number | null
-          external_links?: Json | null
           external_url?: string | null
+          folder_id?: string | null
           id?: string
-          level?: number
+          level?: number | null
           number: number
           parent_id?: string | null
           position?: number
@@ -769,28 +828,30 @@ export type Database = {
           project_id: string
           reporter_id: string
           start_date?: string | null
-          status_id?: string | null
+          status_id: string
           title: string
           tracker_id: string
           updated_at?: string
-          visibility?: string
+          visibility?: string | null
         }
         Update: {
           actual_end_date?: string | null
           actual_hours?: number | null
           actual_start_date?: string | null
+          agent_assignee_id?: string | null
+          agent_reporter_id?: string | null
           ai_metadata?: Json | null
           assignee_id?: string | null
           created_at?: string
-          created_by_ai?: boolean
+          created_by_ai?: boolean | null
           deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           estimated_hours?: number | null
-          external_links?: Json | null
           external_url?: string | null
+          folder_id?: string | null
           id?: string
-          level?: number
+          level?: number | null
           number?: number
           parent_id?: string | null
           position?: number
@@ -798,18 +859,39 @@ export type Database = {
           project_id?: string
           reporter_id?: string
           start_date?: string | null
-          status_id?: string | null
+          status_id?: string
           title?: string
           tracker_id?: string
           updated_at?: string
-          visibility?: string
+          visibility?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "work_items_agent_assignee_id_fkey"
+            columns: ["agent_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_agent_reporter_id_fkey"
+            columns: ["agent_reporter_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_items_assignee_id_fkey"
             columns: ["assignee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
             referencedColumns: ["id"]
           },
           {
@@ -871,6 +953,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string | null
+          is_demo: boolean | null
           key: string | null
           name: string | null
           owner_id: string | null
@@ -883,6 +966,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string | null
+          is_demo?: boolean | null
           key?: string | null
           name?: string | null
           owner_id?: string | null
@@ -895,6 +979,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string | null
+          is_demo?: boolean | null
           key?: string | null
           name?: string | null
           owner_id?: string | null
@@ -926,6 +1011,7 @@ export type Database = {
           due_date: string | null
           estimated_hours: number | null
           external_url: string | null
+          folder_id: string | null
           id: string | null
           level: number | null
           number: number | null
@@ -954,6 +1040,7 @@ export type Database = {
           due_date?: string | null
           estimated_hours?: number | null
           external_url?: string | null
+          folder_id?: string | null
           id?: string | null
           level?: number | null
           number?: number | null
@@ -982,6 +1069,7 @@ export type Database = {
           due_date?: string | null
           estimated_hours?: number | null
           external_url?: string | null
+          folder_id?: string | null
           id?: string | null
           level?: number | null
           number?: number | null
@@ -1003,6 +1091,13 @@ export type Database = {
             columns: ["assignee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
             referencedColumns: ["id"]
           },
           {
@@ -1062,42 +1157,13 @@ export type Database = {
         Args: { p_project_id: string; p_work_item_ids: string[] }
         Returns: number
       }
-      check_circular_reference: {
-        Args: { p_item_id: string; p_new_parent_id: string }
-        Returns: boolean
-      }
       get_app_role: { Args: never; Returns: string }
-      get_cross_project_links: {
-        Args: { p_project_ids?: string[] }
-        Returns: {
-          link_count: number
-          source_project_id: string
-          source_project_key: string
-          source_project_name: string
-          suspect_count: number
-          target_project_id: string
-          target_project_key: string
-          target_project_name: string
-        }[]
-      }
       get_linked_issue_worst_status: {
         Args: { p_project_id: string }
         Returns: {
           work_item_id: string
           worst_status_color: string
           worst_status_name: string
-        }[]
-      }
-      get_project_card_summaries: {
-        Args: { p_project_ids: string[] }
-        Returns: {
-          closed_count: number
-          item_count: number
-          member_count: number
-          members: Json
-          owner_avatar_url: string
-          owner_name: string
-          project_id: string
         }[]
       }
       get_project_role: { Args: { p_project_id: string }; Returns: string }
@@ -1153,6 +1219,7 @@ export type Database = {
       }
     }
     Enums: {
+      agent_status: "active" | "inactive" | "revoked"
       app_role: "admin" | "user" | "guest"
       project_role: "owner" | "admin" | "member" | "viewer"
     }
@@ -1286,6 +1353,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_status: ["active", "inactive", "revoked"],
       app_role: ["admin", "user", "guest"],
       project_role: ["owner", "admin", "member", "viewer"],
     },

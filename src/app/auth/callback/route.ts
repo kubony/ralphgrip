@@ -2,11 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getServiceClient } from '@/lib/supabase/service'
 import { NextResponse } from 'next/server'
 
-const ALLOWED_DOMAIN = '@maum.ai'
-const ALLOWED_EMAILS = ['kubony@gmail.com']
-
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams, origin: rawOrigin } = new URL(request.url)
+  // 리버스 프록시 뒤에서는 request.url이 localhost:3000으로 잡히므로 환경변수 우선 사용
+  const origin = process.env.NEXT_PUBLIC_APP_URL || rawOrigin
   const code = searchParams.get('code')
   const rawNext = searchParams.get('next') ?? '/projects'
   // 오픈 리다이렉트 방지: 반드시 내부 경로(/)로만 허용
@@ -17,14 +16,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // 도메인 화이트리스트 체크
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user?.email?.endsWith(ALLOWED_DOMAIN) && !ALLOWED_EMAILS.includes(user?.email ?? '')) {
-        await supabase.auth.signOut()
-        return NextResponse.redirect(
-          `${origin}/login?error=domain_not_allowed`
-        )
-      }
 
       // Google 토큰 저장 (Drive API 서버사이드 접근용)
       const { data: { session } } = await supabase.auth.getSession()

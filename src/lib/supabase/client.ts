@@ -9,7 +9,7 @@ export function createClient() {
         maxAge: 60 * 60 * 24 * 7,
         path: '/',
         sameSite: 'lax' as const,
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith('https'),
       },
     }
   )

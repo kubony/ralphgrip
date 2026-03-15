@@ -121,7 +121,10 @@ export interface Agent {
   name: string
   display_name: string
   avatar_url: string | null
-  agent_type: string
+  agent_kind: string
+  agent_role: string
+  agent_model: string | null
+  agent_runtime: string
   status: string
 }
 

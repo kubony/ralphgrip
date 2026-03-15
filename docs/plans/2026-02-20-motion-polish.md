@@ -1,4 +1,4 @@
-# Worvk UI Motion & Polish Implementation Plan
+# AgentGrip UI Motion & Polish Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -23,7 +23,7 @@
 
 **Step 1: Install Framer Motion**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm install framer-motion@11`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm install framer-motion@11`
 
 Expected: Successfully added framer-motion to package.json, `node_modules/framer-motion/`
 
@@ -123,14 +123,14 @@ export const toastVariants = {
 
 **Step 3: Verify motion.ts exports**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npx tsc --noEmit src/lib/motion.ts`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npx tsc --noEmit src/lib/motion.ts`
 
 Expected: No TypeScript errors
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add package.json package-lock.json src/lib/motion.ts
 git commit -m "feat: install framer-motion and create motion token library"
 ```
@@ -252,14 +252,14 @@ AnimatedButton.displayName = 'AnimatedButton'
 
 **Step 2: Verify it compiles**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-button.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-button.tsx`
 
 Expected: No TypeScript errors
 
 **Step 3: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/ui/animated-button.tsx
 git commit -m "feat: create AnimatedButton component wrapper with loading/success/error states"
 ```
@@ -322,14 +322,14 @@ AnimatedCard.displayName = 'AnimatedCard'
 
 **Step 2: Verify it compiles**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-card.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-card.tsx`
 
 Expected: No TypeScript errors
 
 **Step 3: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/ui/animated-card.tsx
 git commit -m "feat: create AnimatedCard component wrapper with entrance and hover animations"
 ```
@@ -402,14 +402,14 @@ AnimatedListItem.displayName = 'AnimatedListItem'
 
 **Step 2: Verify it compiles**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-list-container.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-list-container.tsx`
 
 Expected: No TypeScript errors
 
 **Step 3: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/ui/animated-list-container.tsx
 git commit -m "feat: create AnimatedListContainer for staggered entrance animations"
 ```
@@ -423,7 +423,7 @@ git commit -m "feat: create AnimatedListContainer for staggered entrance animati
 
 **Step 1: Read existing project-card.tsx**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && head -50 src/components/projects/project-card.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && head -50 src/components/projects/project-card.tsx`
 
 Expected: See current component structure
 
@@ -453,14 +453,14 @@ export function ProjectCard({ project, delay = 0 }: ProjectCardProps) {
 
 **Step 3: Verify dev server builds**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds or shows only peer dependency warnings
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/projects/project-card.tsx
 git commit -m "feat: update ProjectCard to use AnimatedCard with entrance animations"
 ```
@@ -474,7 +474,7 @@ git commit -m "feat: update ProjectCard to use AnimatedCard with entrance animat
 
 **Step 1: Read tree panel component**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && head -80 src/components/projects/alm-tree-panel-content.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && head -80 src/components/projects/alm-tree-panel-content.tsx`
 
 Expected: See current tree container
 
@@ -505,14 +505,14 @@ export function ALMTreePanelContent(...) {
 
 **Step 3: Verify dev server builds**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/projects/alm-tree-panel-content.tsx
 git commit -m "feat: add scroll mask to tree panel for fade effect"
 ```
@@ -595,14 +595,14 @@ AnimatedAccordion.displayName = 'AnimatedAccordion'
 
 **Step 2: Verify it compiles**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-accordion.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npx tsc --noEmit src/components/ui/animated-accordion.tsx`
 
 Expected: No TypeScript errors
 
 **Step 3: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/ui/animated-accordion.tsx
 git commit -m "feat: create AnimatedAccordion with chevron rotation and height animations"
 ```
@@ -616,7 +616,7 @@ git commit -m "feat: create AnimatedAccordion with chevron rotation and height a
 
 **Step 1: Read property panel**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && grep -n "CardHeader\|CardTitle\|border-b" src/components/projects/alm-property-panel.tsx | head -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && grep -n "CardHeader\|CardTitle\|border-b" src/components/projects/alm-property-panel.tsx | head -20`
 
 Expected: See section structure
 
@@ -642,14 +642,14 @@ import { AnimatedAccordion } from '@/components/ui/animated-accordion'
 
 **Step 3: Verify dev server builds**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/projects/alm-property-panel.tsx
 git commit -m "feat: update PropertyPanel sections to use AnimatedAccordion"
 ```
@@ -663,7 +663,7 @@ git commit -m "feat: update PropertyPanel sections to use AnimatedAccordion"
 
 **Step 1: Read toaster component**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && cat src/components/ui/toaster.tsx`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && cat src/components/ui/toaster.tsx`
 
 Expected: See current toast implementation
 
@@ -685,14 +685,14 @@ toast.success('Saved!', {
 
 **Step 3: Verify build**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds
 
 **Step 4: Commit (if changes made)**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/ui/toaster.tsx
 git commit -m "feat: add exit animation to toast component"
 ```
@@ -706,7 +706,7 @@ git commit -m "feat: add exit animation to toast component"
 
 **Step 1: Locate kanban card rendering**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && find src/components -name "*kanban*" -o -name "*card*" | grep -i view`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && find src/components -name "*kanban*" -o -name "*card*" | grep -i view`
 
 Expected: Find kanban view component
 
@@ -728,14 +728,14 @@ import { cardVariants, TRANSITION } from '@/lib/motion'
 
 **Step 3: Verify build**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/projects/kanban-view.tsx
 git commit -m "feat: add hover lift animations to kanban cards"
 ```
@@ -749,7 +749,7 @@ git commit -m "feat: add hover lift animations to kanban cards"
 
 **Step 1: Find view switcher**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && grep -r "TimelineView\|KanbanView\|ListView" src/components/projects/ | head -5`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && grep -r "TimelineView\|KanbanView\|ListView" src/components/projects/ | head -5`
 
 Expected: Find view switcher component
 
@@ -776,14 +776,14 @@ import { TRANSITION } from '@/lib/motion'
 
 **Step 3: Verify build**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/projects/projects-view-switcher.tsx
 git commit -m "feat: add page transition animations when switching views"
 ```
@@ -827,14 +827,14 @@ import { TRANSITION } from '@/lib/motion'
 
 **Step 3: Verify build**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build 2>&1 | tail -20`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build 2>&1 | tail -20`
 
 Expected: Build succeeds
 
 **Step 4: Commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git add src/components/projects/tree-item-node.tsx
 git commit -m "feat: add hover animations to tree items with background and action icons"
 ```
@@ -847,7 +847,7 @@ git commit -m "feat: add hover animations to tree items with background and acti
 
 **Step 1: Start dev server**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run dev`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run dev`
 
 Expected: Server starts at http://localhost:3000
 
@@ -877,14 +877,14 @@ Run: `Ctrl+C` in dev terminal
 
 **Step 2: Build for production**
 
-Run: `cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish && npm run build`
+Run: `cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish && npm run build`
 
 Expected: Build succeeds with no errors (warnings OK)
 
 **Step 3: Push feature branch**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git push -u origin feature/motion-polish
 ```
 
@@ -893,7 +893,7 @@ Expected: Branch pushed to GitHub
 **Step 4: Create summary commit**
 
 ```bash
-cd /Users/inkeun/projects/.worktrees/worvk/feature-motion-polish
+cd /Users/inkeun/projects/.worktrees/agentgrip/feature-motion-polish
 git log --oneline -10
 ```
 

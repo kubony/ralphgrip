@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-**Worvk**는 AI 기반 프로젝트 관리 도구로, Jira의 구조화된 관리와 AI 기능을 결합한다.
+**AgentGrip**는 AI 기반 프로젝트 관리 도구로, Jira의 구조화된 관리와 AI 기능을 결합한다.
 
 핵심 특징:
 - 자유로운 작업 계층 구조 (parent_id 기반)

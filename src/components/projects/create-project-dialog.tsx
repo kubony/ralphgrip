@@ -119,7 +119,7 @@ export function CreateProjectDialog() {
               <Input
                 id="name"
                 name="name"
-                placeholder="예: Worvk 개발"
+                placeholder="예: 신규 프로젝트"
                 required
               />
             </div>
