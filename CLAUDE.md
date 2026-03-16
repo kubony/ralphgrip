@@ -403,80 +403,40 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
 
 ## 배포
 
-### 인프라 구성
-
-- **GCP 프로젝트**: `madspeed-ikseo`
-- **프로덕션 VM**: `madspeed-web` (asia-northeast3-a, e2-standard-2)
-- **프로덕션 IP**: `34.50.15.61`
-- **프로세스 관리**: PM2 (`madspeed` 프로세스)
-- **GitHub 레포**: `kubony/ralphgrip`
-
-### VM 디렉토리 구조
-
-```
-/home/inkeun/
-├── ralphgrip/    # git clone (origin: kubony/ralphgrip)
-└── madspeed/     # 프로덕션 실행 디렉토리 (PM2 cwd)
-```
-
-### 배포 절차
-
-```bash
-# 1. VM 접속
-gcloud compute ssh madspeed-web --project=madspeed-ikseo --zone=asia-northeast3-a
-
-# 2. 코드 업데이트
-cd ~/ralphgrip
-git pull origin main
-
-# 3. 프로덕션 디렉토리에 동기화 (node_modules, .git 제외)
-rsync -av --delete --exclude='node_modules' --exclude='.git' --exclude='.next' --exclude='.env.local' ~/ralphgrip/ ~/madspeed/
-
-# 4. 빌드
-cd ~/madspeed
-pnpm install
-pnpm build
-
-# 5. 재시작
-pm2 restart madspeed
-```
-
-### PM2 관리 명령어
-
-```bash
-pm2 list                    # 프로세스 상태
-pm2 logs madspeed           # 로그 확인
-pm2 restart madspeed        # 재시작
-pm2 show madspeed           # 상세 정보
-```
-
-### CI
-
-GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test + build 검증
-
-## 배포
-
 ### 인프라
 
-- **VM**: GCP Compute Engine `madspeed-web` (e2-standard-2, Ubuntu 22.04)
 - **GCP 프로젝트**: `madspeed-ikseo`
-- **Zone**: `asia-northeast3-a`
-- **외부 IP**: `34.50.15.61`
-- **앱 경로**: `~/ralphgrip` (git clone, SSH deploy key)
-- **프로세스**: PM2 (`ralphgrip`), Next.js 포트 3000
-- **리버스 프록시**: nginx (80 → 3000)
+- **VM**: `ralphgrip` (asia-northeast3-a, e2-standard-2, Ubuntu 22.04)
+- **외부 IP**: `34.64.251.84` (고정 IP)
+- **GitHub 레포**: `kubony/ralphgrip`
+- **앱 경로**: `/home/inkeun/ralphgrip`
+- **프로세스**: PM2 (`ralphgrip` 포트 3000, `ralphgrip-mcp` 포트 3001)
+- **리버스 프록시**: nginx (80 → 3000, /mcp → 3001)
 
 ### 배포 명령어
 
 ```bash
-# 로컬에서 SSH 접속하여 배포
-gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="
-  cd ~/ralphgrip && \
-  git pull && \
-  pnpm install --frozen-lockfile && \
-  NODE_OPTIONS='--max-old-space-size=4096' pnpm build && \
-  pm2 restart ralphgrip
+# 원커맨드 배포
+gcloud compute ssh ralphgrip --zone=asia-northeast3-a --project=madspeed-ikseo --command="
+  sudo -u inkeun bash -c '
+    cd /home/inkeun/ralphgrip && \
+    git pull && \
+    pnpm install --frozen-lockfile && \
+    NODE_OPTIONS=\"--max-old-space-size=4096\" pnpm build && \
+    cd mcp-server && npx tsc && cd .. && \
+    pm2 restart all
+  '
 "
+```
+
+### PM2 관리
+
+```bash
+# VM SSH 접속 후 (sudo -u inkeun 필요)
+pm2 list                        # 프로세스 상태
+pm2 logs ralphgrip --lines 20   # 웹 로그
+pm2 logs ralphgrip-mcp          # MCP 서버 로그
+pm2 restart all                 # 전체 재시작
 ```
 
 ### 빌드 주의사항
@@ -484,16 +444,11 @@ gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikse
 - e2-standard-2 (8GB RAM)에서 TypeScript 체크 시 OOM 발생 가능
 - 반드시 `NODE_OPTIONS='--max-old-space-size=4096'` 설정 필요
 - PM2 설정이 저장되어 있으므로 VM 재부팅 시 자동 시작됨
+- SSH 유저가 `seo_repact_ai_kr`이므로 `sudo -u inkeun` 필요
 
-### VM 관리
+### CI
 
-```bash
-# VM 상태 확인
-gcloud compute instances describe madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --format="value(status)"
-
-# PM2 상태/로그 확인
-gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="pm2 list && pm2 logs ralphgrip --lines 20 --nostream"
-```
+GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test + build 검증
 
 ## 환경 변수
 
@@ -501,7 +456,7 @@ gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikse
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_APP_URL` — 프로덕션: `http://34.50.15.61`, 개발: `http://localhost:3000`
+- `NEXT_PUBLIC_APP_URL` — 프로덕션: `http://34.64.251.84`, 개발: `http://localhost:3000`
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `SLACK_BOT_TOKEN`
