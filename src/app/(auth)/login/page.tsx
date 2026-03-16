@@ -26,11 +26,6 @@ function LoginForm() {
       provider: 'google',
       options: {
         redirectTo: callbackUrl.toString(),
-        scopes: 'https://www.googleapis.com/auth/drive.readonly',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
       },
     })
   }
