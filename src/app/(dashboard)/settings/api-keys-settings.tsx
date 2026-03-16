@@ -200,12 +200,12 @@ export function ApiKeysSettings() {
           <div className="mt-2 p-3 rounded-lg bg-muted/50 text-xs font-mono whitespace-pre">{`// claude_desktop_config.json
 {
   "mcpServers": {
-    "agentgrip": {
+    "ralphgrip": {
       "command": "npx",
-      "args": ["@agentgrip/mcp-server"],
+      "args": ["@ralphgrip/mcp-server"],
       "env": {
-        "AGENTGRIP_URL": "${process.env.NEXT_PUBLIC_APP_URL || 'http://34.50.15.61'}:3001",
-        "AGENTGRIP_API_KEY": "ag_your_key_here"
+        "RALPHGRIP_URL": "${process.env.NEXT_PUBLIC_APP_URL || 'http://34.50.15.61'}:3001",
+        "RALPHGRIP_API_KEY": "ag_your_key_here"
       }
     }
   }

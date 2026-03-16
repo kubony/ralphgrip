@@ -1,12 +1,12 @@
 {
-  "name": "@agentgrip/orchestrator",
+  "name": "@ralphgrip/orchestrator",
   "version": "0.1.0",
   "private": true,
-  "description": "AgentGrip orchestrator — polls work_items and runs Claude Code agents",
+  "description": "RalphGrip orchestrator — polls work_items and runs Claude Code agents",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "agentgrip-orchestrator": "./dist/index.js"
+    "ralphgrip-orchestrator": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",

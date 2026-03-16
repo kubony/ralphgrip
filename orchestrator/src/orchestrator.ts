@@ -261,7 +261,7 @@ export class Orchestrator {
         // Add completion comment
         await this.tracker.addComment(
           issue.id,
-          `🤖 **AgentGrip Orchestrator** — 작업 완료 (attempt ${attempt})\n\n` +
+          `🤖 **RalphGrip Orchestrator** — 작업 완료 (attempt ${attempt})\n\n` +
           `Duration: ${Math.round(result.durationMs / 1000)}s | ` +
           `Tokens: ${result.usage.input_tokens} in / ${result.usage.output_tokens} out\n\n` +
           (result.result ? `\`\`\`\n${result.result.slice(0, 2000)}\n\`\`\`` : ''),
@@ -282,7 +282,7 @@ export class Orchestrator {
         // Add failure comment
         await this.tracker.addComment(
           issue.id,
-          `🤖 **AgentGrip Orchestrator** — 작업 실패 (attempt ${attempt})\n\n` +
+          `🤖 **RalphGrip Orchestrator** — 작업 실패 (attempt ${attempt})\n\n` +
           `Error: ${result.error}\n` +
           `Duration: ${Math.round(result.durationMs / 1000)}s`,
         )
@@ -350,7 +350,7 @@ export class Orchestrator {
     if (contResult.success) {
       await this.tracker.addComment(
         issue.id,
-        `🤖 **AgentGrip Orchestrator** — continuation 완료\n\n` +
+        `🤖 **RalphGrip Orchestrator** — continuation 완료\n\n` +
         `Duration: ${Math.round(contResult.durationMs / 1000)}s | ` +
         `Tokens: ${contResult.usage.input_tokens} in / ${contResult.usage.output_tokens} out`,
       )

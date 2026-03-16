@@ -49,9 +49,9 @@ Resolved → In Progress
 6. 오케스트레이터가 산출물을 검수하고 승인하면 `Closed`로 이동한다.
 7. `Closed`만 최종 완료 상태로 간주한다.
 
-## AgentGrip / RalphGrip E2E 원칙
+## RalphGrip / RalphGrip E2E 원칙
 
-AgentGrip(RalphGrip)은 단순 추적 도구가 아니라, 프로젝트 생성부터 최종 결과물 완성까지 전체 실행 흐름을 다루는 시스템이어야 한다.
+RalphGrip(RalphGrip)은 단순 추적 도구가 아니라, 프로젝트 생성부터 최종 결과물 완성까지 전체 실행 흐름을 다루는 시스템이어야 한다.
 
 ### 대표 E2E 시나리오
 

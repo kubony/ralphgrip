@@ -22,7 +22,7 @@ async function main() {
   const port = parseInt(values.port as string, 10)
   const workflowPath = values.workflow as string
 
-  log.info('AgentGrip Orchestrator starting', { port, workflowPath })
+  log.info('RalphGrip Orchestrator starting', { port, workflowPath })
 
   // 1. Load workflow config
   const loader = new WorkflowLoader(workflowPath)
@@ -35,7 +35,7 @@ async function main() {
     projectId: config.tracker.project_id,
     activeStates: config.tracker.active_states,
     terminalStates: config.tracker.terminal_states,
-    agentId: process.env.AGENTGRIP_AGENT_ID,
+    agentId: process.env.RALPHGRIP_AGENT_ID,
   })
 
   // 3. Create workspace manager
@@ -58,7 +58,7 @@ async function main() {
   // 7. Start orchestrator
   await orchestrator.start()
 
-  log.info('AgentGrip Orchestrator is running', {
+  log.info('RalphGrip Orchestrator is running', {
     statusApi: `http://localhost:${port}/api/v1/state`,
     polling: `${config.polling.interval_ms}ms`,
     maxConcurrent: config.agent.max_concurrent_agents,

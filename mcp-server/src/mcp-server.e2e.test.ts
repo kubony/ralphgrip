@@ -89,7 +89,7 @@ describe('MCP Server — stdio E2E', () => {
 
     const initResponse = await waitForResponse(proc)
     expect(initResponse.result).toBeDefined()
-    expect((initResponse.result as any).serverInfo?.name).toBe('agentgrip')
+    expect((initResponse.result as any).serverInfo?.name).toBe('ralphgrip')
 
     // 2. Send initialized notification (no id)
     proc.stdin!.write(JSON.stringify({

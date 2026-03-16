@@ -1,12 +1,12 @@
 {
-  "name": "@agentgrip/mcp-server",
+  "name": "@ralphgrip/mcp-server",
   "version": "0.2.0",
   "private": false,
-  "description": "MCP server for AgentGrip — AI-powered project management",
+  "description": "MCP server for RalphGrip — AI-powered project management",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "agentgrip-mcp": "dist/index.js"
+    "ralphgrip-mcp": "dist/index.js"
   },
   "files": [
     "dist",

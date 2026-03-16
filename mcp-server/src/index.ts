@@ -19,8 +19,8 @@ function getArg(argv: string[], flag: string): string | undefined {
 }
 
 async function main() {
-  // Proxy mode: AGENTGRIP_URL set → forward stdio to remote HTTP server
-  if (process.env.AGENTGRIP_URL && transportMode === 'stdio') {
+  // Proxy mode: RALPHGRIP_URL set → forward stdio to remote HTTP server
+  if (process.env.RALPHGRIP_URL && transportMode === 'stdio') {
     await startProxyClient()
     return
   }
@@ -37,7 +37,7 @@ async function startStdioServer() {
   let agentCtx: AgentContext | null = null
 
   if (isApiKeyMode()) {
-    agentCtx = await validateApiKey(process.env.AGENTGRIP_API_KEY!)
+    agentCtx = await validateApiKey(process.env.RALPHGRIP_API_KEY!)
     if (!agentCtx) {
       console.error('Invalid API key. Exiting.')
       process.exit(1)
@@ -57,11 +57,11 @@ async function startProxyClient() {
   const { Client } = await import('@modelcontextprotocol/sdk/client/index.js')
   const { StreamableHTTPClientTransport } = await import('@modelcontextprotocol/sdk/client/streamableHttp.js')
 
-  const serverUrl = process.env.AGENTGRIP_URL!
-  const apiKey = process.env.AGENTGRIP_API_KEY
+  const serverUrl = process.env.RALPHGRIP_URL!
+  const apiKey = process.env.RALPHGRIP_API_KEY
 
   if (!apiKey) {
-    console.error('AGENTGRIP_API_KEY is required when using AGENTGRIP_URL proxy mode.')
+    console.error('RALPHGRIP_API_KEY is required when using RALPHGRIP_URL proxy mode.')
     process.exit(1)
   }
 
@@ -77,7 +77,7 @@ async function startProxyClient() {
   })
 
   // Create a local MCP client that connects to the remote server
-  const client = new Client({ name: 'agentgrip-proxy', version: '0.2.0' })
+  const client = new Client({ name: 'ralphgrip-proxy', version: '0.2.0' })
   await client.connect(httpTransport)
 
   // Now create a local stdio server that proxies to the remote
@@ -301,7 +301,7 @@ async function startHttpServer(port: number) {
   })
 
   httpServer.listen(port, () => {
-    console.error(`AgentGrip MCP HTTP server listening on port ${port}`)
+    console.error(`RalphGrip MCP HTTP server listening on port ${port}`)
     console.error(`  Endpoint: http://localhost:${port}/mcp`)
     console.error(`  Health:   http://localhost:${port}/health`)
     console.error(`  Auth:     Authorization: Bearer ag_xxx (per-session)`)

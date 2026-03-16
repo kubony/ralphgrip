@@ -7,7 +7,7 @@
 
 ## 1. 개요
 
-AgentGrip에 5번째 뷰로 타임라인(간트차트)을 추가한다. work_items의 `start_date`/`due_date`를 시간축 위에 수평 바로 표시하여 프로젝트의 시간적 구조를 시각화한다.
+RalphGrip에 5번째 뷰로 타임라인(간트차트)을 추가한다. work_items의 `start_date`/`due_date`를 시간축 위에 수평 바로 표시하여 프로젝트의 시간적 구조를 시각화한다.
 
 **핵심 가치**: 기존 4개 뷰(ALM, Kanban, List, Graph)에서 빠져 있는 "시간 차원"을 보완
 

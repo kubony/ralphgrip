@@ -20,7 +20,7 @@ export function registerAgentInfoTools(server: McpServer, agentCtx: AgentContext
           mode: 'legacy',
           projectId,
           agentId,
-          message: 'Running in legacy mode. Use AGENTGRIP_API_KEY for multi-project support.',
+          message: 'Running in legacy mode. Use RALPHGRIP_API_KEY for multi-project support.',
         })
       }
 

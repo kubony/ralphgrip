@@ -103,7 +103,7 @@ function buildClaudeCommand(
   projectKey: string,
   projectId: string,
 ): string {
-  const header = `You are working on the AgentGrip project "${projectKey}" (ID: ${projectId}).`
+  const header = `You are working on the RalphGrip project "${projectKey}" (ID: ${projectId}).`
   const instructions = `## Instructions
 1. Execute each task in priority order (긴급 > 높음 > 보통 > 낮음).
 2. Use /ralph to execute all tasks autonomously until completion.`

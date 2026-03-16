@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'agentgrip:show-datetime-seconds'
-const EVENT_NAME = 'agentgrip:show-datetime-seconds-changed'
+const STORAGE_KEY = 'ralphgrip:show-datetime-seconds'
+const EVENT_NAME = 'ralphgrip:show-datetime-seconds-changed'
 
 function readShowSeconds(): boolean {
   if (typeof window === 'undefined') return true

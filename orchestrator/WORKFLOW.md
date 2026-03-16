@@ -3,7 +3,7 @@ tracker:
   kind: self
   supabase_url: $SUPABASE_URL
   supabase_key: $SUPABASE_SERVICE_ROLE_KEY
-  project_id: $AGENTGRIP_PROJECT_ID
+  project_id: $RALPHGRIP_PROJECT_ID
   active_states: ["Open", "In Progress"]
   terminal_states: ["Resolved", "Closed"]
 
@@ -11,7 +11,7 @@ polling:
   interval_ms: 30000
 
 workspace:
-  root: ~/agentgrip_workspaces
+  root: ~/ralphgrip_workspaces
 
 hooks: {}
 

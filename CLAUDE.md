@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-**AgentGrip**는 AI 기반 프로젝트 관리 도구로, Jira의 구조화된 관리와 AI 기능을 결합한다.
+**RalphGrip**는 AI 기반 프로젝트 관리 도구로, Jira의 구조화된 관리와 AI 기능을 결합한다.
 
 핵심 특징:
 - 자유로운 작업 계층 구조 (parent_id 기반)
@@ -45,8 +45,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Resolved`: 에이전트가 작업 완료로 판단한 상태
 - `Closed`: 오케스트레이터가 점검 후 최종 완료한 상태
 
-**AgentGrip / RalphGrip E2E 원칙**:
-- AgentGrip(RalphGrip)은 프로젝트 생성부터 최종 산출물 완료까지 전체 실행 흐름을 다룬다.
+**RalphGrip E2E 원칙**:
+- RalphGrip은 프로젝트 생성부터 최종 산출물 완료까지 전체 실행 흐름을 다룬다.
 - 대표 시나리오는 영상 제작 프로젝트를 만들고, AI 에이전트를 스폰/할당해 실제 작업을 수행시켜 최종 영상을 완성하는 것이다.
 - 즉, 단순 관리 툴이 아니라 오케스트레이터와 에이전트가 실제로 일하는 실행형 시스템을 지향한다.
 
@@ -409,13 +409,13 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
 - **프로덕션 VM**: `madspeed-web` (asia-northeast3-a, e2-standard-2)
 - **프로덕션 IP**: `34.50.15.61`
 - **프로세스 관리**: PM2 (`madspeed` 프로세스)
-- **GitHub 레포**: `inkeunseo-maum/agentgrip`
+- **GitHub 레포**: `kubony/ralphgrip`
 
 ### VM 디렉토리 구조
 
 ```
 /home/inkeun/
-├── agentgrip/    # git clone (origin: inkeunseo-maum/agentgrip)
+├── ralphgrip/    # git clone (origin: kubony/ralphgrip)
 └── madspeed/     # 프로덕션 실행 디렉토리 (PM2 cwd)
 ```
 
@@ -426,11 +426,11 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
 gcloud compute ssh madspeed-web --project=madspeed-ikseo --zone=asia-northeast3-a
 
 # 2. 코드 업데이트
-cd ~/agentgrip
+cd ~/ralphgrip
 git pull origin main
 
 # 3. 프로덕션 디렉토리에 동기화 (node_modules, .git 제외)
-rsync -av --delete --exclude='node_modules' --exclude='.git' --exclude='.next' --exclude='.env.local' ~/agentgrip/ ~/madspeed/
+rsync -av --delete --exclude='node_modules' --exclude='.git' --exclude='.next' --exclude='.env.local' ~/ralphgrip/ ~/madspeed/
 
 # 4. 빌드
 cd ~/madspeed
@@ -462,8 +462,8 @@ GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test
 - **GCP 프로젝트**: `madspeed-ikseo`
 - **Zone**: `asia-northeast3-a`
 - **외부 IP**: `34.50.15.61`
-- **앱 경로**: `~/agentgrip` (git clone, SSH deploy key)
-- **프로세스**: PM2 (`agentgrip`), Next.js 포트 3000
+- **앱 경로**: `~/ralphgrip` (git clone, SSH deploy key)
+- **프로세스**: PM2 (`ralphgrip`), Next.js 포트 3000
 - **리버스 프록시**: nginx (80 → 3000)
 
 ### 배포 명령어
@@ -471,11 +471,11 @@ GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test
 ```bash
 # 로컬에서 SSH 접속하여 배포
 gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="
-  cd ~/agentgrip && \
+  cd ~/ralphgrip && \
   git pull && \
   pnpm install --frozen-lockfile && \
   NODE_OPTIONS='--max-old-space-size=4096' pnpm build && \
-  pm2 restart agentgrip
+  pm2 restart ralphgrip
 "
 ```
 
@@ -492,7 +492,7 @@ gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikse
 gcloud compute instances describe madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --format="value(status)"
 
 # PM2 상태/로그 확인
-gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="pm2 list && pm2 logs agentgrip --lines 20 --nostream"
+gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="pm2 list && pm2 logs ralphgrip --lines 20 --nostream"
 ```
 
 ## 환경 변수

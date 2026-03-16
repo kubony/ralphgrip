@@ -1,6 +1,6 @@
-# @agentgrip/mcp-server
+# @ralphgrip/mcp-server
 
-MCP (Model Context Protocol) server for [AgentGrip](https://github.com/inkeunseo-maum/agentgrip) — AI 기반 프로젝트 관리 도구.
+MCP (Model Context Protocol) server for [RalphGrip](https://github.com/kubony/ralphgrip) — AI 기반 프로젝트 관리 도구.
 
 AI 에이전트가 프로젝트와 작업 항목을 생성/조회/수정할 수 있는 MCP 도구를 제공합니다.
 
@@ -22,13 +22,13 @@ AI 에이전트가 프로젝트와 작업 항목을 생성/조회/수정할 수 
 ```json
 {
   "mcpServers": {
-    "agentgrip": {
+    "ralphgrip": {
       "command": "node",
-      "args": ["/path/to/agentgrip/mcp-server/dist/index.js"],
+      "args": ["/path/to/ralphgrip/mcp-server/dist/index.js"],
       "env": {
-        "AGENTGRIP_API_KEY": "ag_your_api_key",
-        "AGENTGRIP_SUPABASE_URL": "https://xxx.supabase.co",
-        "AGENTGRIP_SERVICE_KEY": "eyJhbG..."
+        "RALPHGRIP_API_KEY": "ag_your_api_key",
+        "RALPHGRIP_SUPABASE_URL": "https://xxx.supabase.co",
+        "RALPHGRIP_SERVICE_KEY": "eyJhbG..."
       }
     }
   }
@@ -47,21 +47,21 @@ node dist/index.js --transport http --port 3001
 
 | 변수 | 설명 | 필수 |
 |------|------|------|
-| `AGENTGRIP_API_KEY` | 에이전트 API 키 (`agents` 테이블의 `api_key_hash`로 검증) | API Key 모드 |
-| `AGENTGRIP_SUPABASE_URL` | Supabase 프로젝트 URL | Yes |
-| `AGENTGRIP_SERVICE_KEY` | Supabase Service Role Key | Yes |
-| `SUPABASE_URL` | (레거시) Supabase URL | `AGENTGRIP_*` 미설정 시 |
-| `SUPABASE_SERVICE_ROLE_KEY` | (레거시) Supabase Service Key | `AGENTGRIP_*` 미설정 시 |
+| `RALPHGRIP_API_KEY` | 에이전트 API 키 (`agents` 테이블의 `api_key_hash`로 검증) | API Key 모드 |
+| `RALPHGRIP_SUPABASE_URL` | Supabase 프로젝트 URL | Yes |
+| `RALPHGRIP_SERVICE_KEY` | Supabase Service Role Key | Yes |
+| `SUPABASE_URL` | (레거시) Supabase URL | `RALPHGRIP_*` 미설정 시 |
+| `SUPABASE_SERVICE_ROLE_KEY` | (레거시) Supabase Service Key | `RALPHGRIP_*` 미설정 시 |
 | `MADSPEED_PROJECT_ID` | (레거시) 단일 프로젝트 UUID | 레거시 모드 |
 | `MADSPEED_AGENT_ID` | (레거시) 에이전트 UUID | 레거시 모드 |
 
 ## API Key 발급
 
-AgentGrip 웹 UI에서 에이전트를 생성하면 API 키가 발급됩니다:
+RalphGrip 웹 UI에서 에이전트를 생성하면 API 키가 발급됩니다:
 
 1. Settings > Agents에서 에이전트 생성
 2. `api_key_hash`가 자동 설정됨
-3. 발급된 `ag_xxx` 키를 `AGENTGRIP_API_KEY`로 설정
+3. 발급된 `ag_xxx` 키를 `RALPHGRIP_API_KEY`로 설정
 
 ## Available Tools
 

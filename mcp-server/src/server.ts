@@ -13,7 +13,7 @@ import type { AgentContext } from './auth.js'
  */
 export function createMcpServer(agentCtx: AgentContext | null): McpServer {
   const server = new McpServer({
-    name: 'agentgrip',
+    name: 'ralphgrip',
     version: '0.2.0',
   })
 

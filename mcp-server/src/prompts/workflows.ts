@@ -3,13 +3,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 export function registerPrompts(server: McpServer) {
   server.prompt(
     'issue_workflow',
-    'AgentGrip issue project workflow rules and tool usage guide',
+    'RalphGrip issue project workflow rules and tool usage guide',
     () => ({
       messages: [{
         role: 'user' as const,
         content: {
           type: 'text' as const,
-          text: `# AgentGrip Issue Workflow
+          text: `# RalphGrip Issue Workflow
 
 ## Status Transitions
 - **Open** → Todo: Agent is assigned to the task
@@ -38,13 +38,13 @@ export function registerPrompts(server: McpServer) {
 
   server.prompt(
     'requirement_workflow',
-    'AgentGrip requirement project workflow rules',
+    'RalphGrip requirement project workflow rules',
     () => ({
       messages: [{
         role: 'user' as const,
         content: {
           type: 'text' as const,
-          text: `# AgentGrip Requirement Workflow
+          text: `# RalphGrip Requirement Workflow
 
 ## Status Transitions
 - **Draft** → New: Requirement drafted and ready for review

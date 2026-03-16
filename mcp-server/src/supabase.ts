@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Support both new env var names and legacy names
-const supabaseUrl = process.env.AGENTGRIP_SUPABASE_URL || process.env.SUPABASE_URL
-const supabaseServiceRoleKey = process.env.AGENTGRIP_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = process.env.RALPHGRIP_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseServiceRoleKey = process.env.RALPHGRIP_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error(
-    'Missing Supabase credentials. Set AGENTGRIP_SUPABASE_URL + AGENTGRIP_SERVICE_KEY or SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY'
+    'Missing Supabase credentials. Set RALPHGRIP_SUPABASE_URL + RALPHGRIP_SERVICE_KEY or SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY'
   )
 }
 
@@ -65,5 +65,5 @@ export async function getActorIds(): Promise<{ profileId: string | null; agentId
  * Check if running in API key authentication mode (vs legacy env var mode).
  */
 export function isApiKeyMode(): boolean {
-  return !!process.env.AGENTGRIP_API_KEY
+  return !!process.env.RALPHGRIP_API_KEY
 }
