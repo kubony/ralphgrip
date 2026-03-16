@@ -32,14 +32,16 @@ export interface TimelineItem {
   due_date: string | null
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 const ZOOM_CONFIG = {
   hour: { cellWidth: 64, pxPerDay: 64 * 24, snapMs: 60 * 60 * 1000 },
-  day: { cellWidth: 40, pxPerDay: 40 },
-  week: { cellWidth: 120, pxPerDay: 120 / 7 },
-  month: { cellWidth: 160, pxPerDay: 160 / 30 },
-  quarter: { cellWidth: 200, pxPerDay: 200 / 91 },
-  half: { cellWidth: 240, pxPerDay: 240 / 182 },
-  year: { cellWidth: 300, pxPerDay: 300 / 365 },
+  day: { cellWidth: 40, pxPerDay: 40, snapMs: DAY_MS },
+  week: { cellWidth: 120, pxPerDay: 120 / 7, snapMs: DAY_MS },
+  month: { cellWidth: 160, pxPerDay: 160 / 30, snapMs: DAY_MS },
+  quarter: { cellWidth: 200, pxPerDay: 200 / 91, snapMs: DAY_MS },
+  half: { cellWidth: 240, pxPerDay: 240 / 182, snapMs: DAY_MS },
+  year: { cellWidth: 300, pxPerDay: 300 / 365, snapMs: DAY_MS },
 } as const
 
 export const ROW_HEIGHT = 36

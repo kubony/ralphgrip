@@ -46,6 +46,7 @@ yarn-error.log*
 .codex/
 .gemini/
 .omx/
+.omc/
 .opencode/
 .windsurf/
 mcp-server/node_modules/

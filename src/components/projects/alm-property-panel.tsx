@@ -1178,7 +1178,7 @@ function ProjectSummaryPanel({
           </div>
           <div className="space-y-1.5">
             {recentItems.map((item) => {
-              const formatted = formatWorkItemDateTime(item.updated_at || item.created_at, 'ko-KR', { showSeconds })
+              const formatted = formatWorkItemDateTime(item.updated_at || item.created_at, 'ko-KR', { showSeconds: false })
               return (
                 <div key={item.id} className="text-sm">
                   <p className="truncate">{item.title}</p>

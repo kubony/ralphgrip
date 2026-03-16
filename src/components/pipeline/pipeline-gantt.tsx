@@ -23,6 +23,7 @@ const AVATAR_SIZE = 18
 const HEADER_HEIGHT = 46
 const ZOOM_ORDER: ZoomLevel[] = ['day', 'week', 'month', 'quarter', 'half', 'year']
 const ZOOM_LABELS: Record<ZoomLevel, string> = {
+  hour: 'Hour',
   day: 'Day',
   week: 'Week',
   month: 'Month',
