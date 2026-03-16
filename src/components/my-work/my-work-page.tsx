@@ -16,6 +16,7 @@ import { MyWorkKanbanView } from './my-work-kanban-view'
 import { MyMentionsTab } from './my-mentions-tab'
 import { PinnedProjectsPopover } from './pinned-projects'
 import { MyWorkPropertySheet } from './my-work-property-sheet'
+import { useRealtimeMyWorkItems } from '@/hooks/use-realtime-my-work-items'
 import { toggleWorkItemPin, updateMyWorkItemStatus, updateMyWorkItemField, toggleCommentRead, markAllCommentsRead } from '@/app/(dashboard)/my-work/actions'
 import type { MyWorkItem, MentionedComment, MyWorkTab, ViewMode, Filters, SortField, SortOrder, DueDateFilter, StatFilter, RoleFilter, StatusesByProject } from './types'
 import type { PinnedProject, UserProject } from './pinned-projects'
@@ -85,6 +86,7 @@ const validTabs: MyWorkTab[] = ['my-work', 'mentions']
 const validRoles: RoleFilter[] = ['assigned', 'created', 'mentioned']
 
 export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCommentIds, pinnedProjects, allProjects, statusesByProject }: MyWorkPageProps) {
+  const liveWorkItems = useRealtimeMyWorkItems(workItems)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -122,10 +124,10 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
   // URL ?item= 복원 (workItems가 비동기 업데이트될 수 있으므로 의존성 포함)
   useEffect(() => {
     if (urlItem && !selectedItem) {
-      const found = workItems.find(w => w.id === urlItem)
+      const found = liveWorkItems.find(w => w.id === urlItem)
       if (found) setSelectedItem(found)
     }
-  }, [urlItem, workItems, selectedItem])
+  }, [urlItem, liveWorkItems, selectedItem])
 
   // URL 동기화 헬퍼
   const updateUrl = useCallback((params: Record<string, string | null>) => {
@@ -271,7 +273,7 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
     const now = new Date()
     const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
-    let result = workItems
+    let result = liveWorkItems
 
     // 역할 필터
     if (roleFilter) {
@@ -306,7 +308,7 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
     }
 
     return result
-  }, [workItems, filters, statFilter, roleFilter])
+  }, [liveWorkItems, filters, statFilter, roleFilter])
 
   const sortedItems = useMemo(() => {
     const sorted = filteredItems.toSorted((a, b) => {
@@ -340,8 +342,8 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
 
   // 언급된 work items (mentions 탭용)
   const mentionedWorkItems = useMemo(
-    () => workItems.filter(item => item.matchReasons.includes('mentioned')),
-    [workItems]
+    () => liveWorkItems.filter(item => item.matchReasons.includes('mentioned')),
+    [liveWorkItems]
   )
 
   const isTimeline = viewMode === 'timeline'
@@ -377,7 +379,7 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
               <div className="h-4 w-px bg-border" />
 
               {/* 스탯 칩 */}
-              <MyWorkStats items={workItems} activeFilter={statFilter} onFilterChange={handleStatFilterChange} />
+              <MyWorkStats items={liveWorkItems} activeFilter={statFilter} onFilterChange={handleStatFilterChange} />
 
               <div className="h-4 w-px bg-border" />
 
@@ -385,7 +387,7 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
               <MyWorkRoleFilter
                 roleFilter={roleFilter}
                 onRoleFilterChange={handleRoleFilterChange}
-                items={workItems}
+                items={liveWorkItems}
               />
 
               {!isTimeline && (
@@ -394,7 +396,7 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
 
                   {/* 필터 */}
                   <MyWorkFilters
-                    items={workItems}
+                    items={liveWorkItems}
                     filters={filters}
                     onFiltersChange={setFilters}
                     statFilter={statFilter}
@@ -451,7 +453,7 @@ export function MyWorkPage({ workItems, mentionedComments, pinnedItemIds, readCo
                     <PinnedProjectsPopover
                       pinnedProjects={pinnedProjects}
                       allProjects={allProjects}
-                      workItems={workItems}
+                      workItems={liveWorkItems}
                     />
                   </>
                 )}

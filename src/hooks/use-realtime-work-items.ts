@@ -35,7 +35,7 @@ export function useRealtimeWorkItems(
           }
 
           // For INSERT and UPDATE, re-fetch the item with joins
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('work_items')
             .select(`
               *,
@@ -49,7 +49,10 @@ export function useRealtimeWorkItems(
             .eq('id', payload.new.id)
             .single()
 
-          if (!data) return
+          if (error || !data) {
+            console.error('[Realtime] Failed to re-fetch work item:', error)
+            return
+          }
 
           if (payload.eventType === 'INSERT') {
             setItems(prev => [...prev, data])
@@ -58,7 +61,15 @@ export function useRealtimeWorkItems(
           }
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[Realtime] work-items channel subscribed for project:', projectId)
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[Realtime] work-items channel error:', err)
+        } else if (status === 'TIMED_OUT') {
+          console.error('[Realtime] work-items channel timed out')
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)

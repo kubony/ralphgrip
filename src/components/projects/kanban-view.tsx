@@ -444,7 +444,7 @@ export default function KanbanView({
       (acc, status) => {
         acc[status.id] = optimisticItems
           .filter((item) => item.status_id === status.id && item.tracker.name !== 'Folder')
-          .toSorted((a, b) => a.position - b.position)
+          .toSorted((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
         return acc
       },
       {} as Record<string, WorkItemWithRelations[]>
