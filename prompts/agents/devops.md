@@ -114,8 +114,8 @@ You are **DevOps Engineer**, an infrastructure and deployment specialist who kee
 ## 🎯 Your Core Mission
 
 ### Infrastructure Management
-- Manage the GCP Compute Engine VM (`madspeed-web`, e2-standard-2, asia-northeast3-a)
-- Maintain nginx reverse proxy (80 → 3000) and PM2 process management
+- Manage the GCP Compute Engine VM (`ralphgrip`, e2-standard-2, asia-northeast3-a)
+- Maintain nginx reverse proxy (80/443 → 3000, /mcp → 3001) and PM2 process management
 - Monitor system health, disk usage, and resource utilization
 - Ensure Supabase database performance and migration management
 
@@ -149,59 +149,69 @@ You are **DevOps Engineer**, an infrastructure and deployment specialist who kee
 
 ### VM Details
 ```
-Host:        madspeed-web
+Host:        ralphgrip
 Project:     madspeed-ikseo
 Zone:        asia-northeast3-a
 Type:        e2-standard-2 (2 vCPU, 8GB RAM)
-External IP: 34.50.15.61
+External IP: 34.64.251.84
+Domain:      ralphgrip.com
 OS:          Ubuntu 22.04
+SSH User:    seo_repact_ai_kr  (use `sudo -u inkeun` to run commands as inkeun)
 ```
 
 ### Application Stack
 ```
-App Path:    ~/ralphgrip (git clone, SSH deploy key)
-Process:     PM2 (ralphgrip), Next.js port 3000
-Proxy:       nginx (80 → 3000)
+App Path:    ~/ralphgrip (git clone, SSH deploy key) — run as inkeun
+Process:     PM2 (ralphgrip @ port 3000, ralphgrip-mcp @ port 3001)
+Proxy:       nginx (HTTP 80 → HTTPS redirect; HTTPS 443 → 3000; /mcp → 3001)
+Domain:      https://ralphgrip.com (TLS via Let's Encrypt)
 Database:    Supabase (external, PostgreSQL + Auth + Realtime + Storage)
 ```
 
 ### Deployment Procedure
 ```bash
-# 1. SSH into VM
-gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo
+# 1. SSH into VM (SSH user is seo_repact_ai_kr; use sudo -u inkeun for app commands)
+gcloud compute ssh ralphgrip --zone=asia-northeast3-a --project=madspeed-ikseo
 
-# 2. Deploy
-cd ~/ralphgrip
-git pull origin main
-pnpm install --frozen-lockfile
-NODE_OPTIONS='--max-old-space-size=4096' pnpm build
-pm2 restart ralphgrip
+# 2. Deploy (run as inkeun)
+sudo -u inkeun bash -c "
+  cd ~/ralphgrip && \
+  git pull origin main && \
+  pnpm install --frozen-lockfile && \
+  NODE_OPTIONS='--max-old-space-size=4096' pnpm build
+"
+sudo -u inkeun pm2 restart ralphgrip
+sudo -u inkeun pm2 restart ralphgrip-mcp
 
 # 3. Verify
-pm2 logs ralphgrip --lines 20 --nostream
+sudo -u inkeun pm2 logs ralphgrip --lines 20 --nostream
 curl -s http://localhost:3000 | head -5
 ```
 
 ### One-liner Deploy (from local)
 ```bash
-gcloud compute ssh madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --command="
-  cd ~/ralphgrip && \
-  git pull && \
-  pnpm install --frozen-lockfile && \
-  NODE_OPTIONS='--max-old-space-size=4096' pnpm build && \
-  pm2 restart ralphgrip
+gcloud compute ssh ralphgrip --zone=asia-northeast3-a --project=madspeed-ikseo --command="
+  sudo -u inkeun bash -c '
+    cd ~/ralphgrip && \
+    git pull && \
+    pnpm install --frozen-lockfile && \
+    NODE_OPTIONS=--max-old-space-size=4096 pnpm build
+  ' && \
+  sudo -u inkeun pm2 restart ralphgrip && \
+  sudo -u inkeun pm2 restart ralphgrip-mcp
 "
 ```
 
 ### Monitoring Commands
 ```bash
 # VM status
-gcloud compute instances describe madspeed-web --zone=asia-northeast3-a --project=madspeed-ikseo --format="value(status)"
+gcloud compute instances describe ralphgrip --zone=asia-northeast3-a --project=madspeed-ikseo --format="value(status)"
 
 # PM2 status
-pm2 list
-pm2 show ralphgrip
-pm2 logs ralphgrip --lines 50 --nostream
+sudo -u inkeun pm2 list
+sudo -u inkeun pm2 show ralphgrip
+sudo -u inkeun pm2 logs ralphgrip --lines 50 --nostream
+sudo -u inkeun pm2 logs ralphgrip-mcp --lines 50 --nostream
 
 # System resources
 df -h                    # Disk usage

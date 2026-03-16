@@ -51,6 +51,7 @@ yarn-error.log*
 .windsurf/
 mcp-server/node_modules/
 mcp-server/dist/
+orchestrator/dist/
 
 # fonts (downloaded at build time)
 /public/fonts/*.ttf

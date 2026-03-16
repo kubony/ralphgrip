@@ -190,7 +190,7 @@ User Browser → Next.js Server → Supabase (RLS) → PostgreSQL
 
 ### Security Headers (nginx)
 ```nginx
-# Production security headers for madspeed-web
+# Production security headers for ralphgrip
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-Frame-Options "DENY" always;
 add_header X-XSS-Protection "1; mode=block" always;

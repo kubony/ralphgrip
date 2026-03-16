@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -17,9 +18,25 @@ export default async function Home() {
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="font-extrabold text-xl tracking-tight">
-            <span className="text-[#FFD90F]" style={{ textShadow: '0.5px 0.5px 0 #8B6508' }}>Ralph</span>
-            <span>Grip</span>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/images/ralph-logo.png"
+              alt="RalphGrip"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-md dark:hidden"
+            />
+            <Image
+              src="/images/ralph-logo-dark.webp"
+              alt="RalphGrip"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-md hidden dark:block"
+            />
+            <span className="font-extrabold text-xl tracking-tight">
+              <span className="text-[#FFD90F]" style={{ textShadow: '0.5px 0.5px 0 #8B6508' }}>Ralph</span>
+              <span>Grip</span>
+            </span>
           </div>
           <Link href="/login">
             <Button className="rounded-xl px-6">로그인</Button>
@@ -30,33 +47,24 @@ export default async function Home() {
       {/* Hero */}
       <main className="flex-1 flex items-center justify-center">
         <div className="container mx-auto px-4 text-center">
-          {/* Mascot - Ralph head */}
+          {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <svg viewBox="0 0 160 170" className="w-32 h-36 drop-shadow-lg" xmlns="http://www.w3.org/2000/svg">
-              {/* Head */}
-              <ellipse cx="80" cy="85" rx="52" ry="55" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.5" />
-              {/* Hair spikes */}
-              <polygon points="35,48 42,15 55,42 65,8 78,40 90,3 102,40 115,10 125,45 132,18 140,52" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.5" strokeLinejoin="round" />
-              {/* Ears */}
-              <ellipse cx="30" cy="90" rx="9" ry="11" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.2" />
-              <ellipse cx="130" cy="90" rx="9" ry="11" fill="#FFD90F" stroke="#C9A200" strokeWidth="1.2" />
-              {/* Eyes */}
-              <ellipse cx="62" cy="80" rx="14" ry="16" fill="white" stroke="#2C2C2C" strokeWidth="1.5" />
-              <ellipse cx="98" cy="80" rx="14" ry="16" fill="white" stroke="#2C2C2C" strokeWidth="1.5" />
-              <circle cx="66" cy="83" r="5.5" fill="#2C2C2C" />
-              <circle cx="102" cy="83" r="5.5" fill="#2C2C2C" />
-              <circle cx="64" cy="79" r="2.2" fill="white" />
-              <circle cx="100" cy="79" r="2.2" fill="white" />
-              {/* Nose */}
-              <ellipse cx="80" cy="97" rx="7" ry="4.5" fill="#E8BE00" stroke="#C9A200" strokeWidth="0.8" />
-              {/* Mouth + overbite */}
-              <path d="M58 112 Q80 126, 102 112" stroke="#8B6508" strokeWidth="2" fill="none" strokeLinecap="round" />
-              <rect x="68" y="111" width="24" height="8" rx="1.5" fill="white" stroke="#8B6508" strokeWidth="0.8" />
-              <line x1="80" y1="111" x2="80" y2="119" stroke="#8B6508" strokeWidth="0.5" />
-              {/* Shirt peek */}
-              <path d="M38 132 Q80 148 122 132 L122 170 L38 170 Z" fill="#7ECFCF" stroke="#5BA8A8" strokeWidth="1.2" />
-              <path d="M62 135 Q80 142 98 135" stroke="#5BA8A8" strokeWidth="1" fill="none" />
-            </svg>
+            <Image
+              src="/images/ralph-logo.png"
+              alt="Ralph"
+              width={120}
+              height={120}
+              className="w-28 h-28 rounded-2xl shadow-lg dark:hidden"
+              priority
+            />
+            <Image
+              src="/images/ralph-logo-dark.webp"
+              alt="Ralph"
+              width={120}
+              height={120}
+              className="w-28 h-28 rounded-2xl shadow-lg hidden dark:block"
+              priority
+            />
           </div>
 
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">

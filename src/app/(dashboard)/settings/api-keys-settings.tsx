@@ -204,7 +204,7 @@ export function ApiKeysSettings() {
       "command": "npx",
       "args": ["@ralphgrip/mcp-server"],
       "env": {
-        "RALPHGRIP_URL": "${process.env.NEXT_PUBLIC_APP_URL || 'http://34.50.15.61'}:3001",
+        "RALPHGRIP_URL": "${process.env.NEXT_PUBLIC_APP_URL || 'https://ralphgrip.com'}/mcp",
         "RALPHGRIP_API_KEY": "ag_your_key_here"
       }
     }
