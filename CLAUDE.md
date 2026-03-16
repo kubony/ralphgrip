@@ -408,10 +408,11 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
 - **GCP 프로젝트**: `madspeed-ikseo`
 - **VM**: `ralphgrip` (asia-northeast3-a, e2-standard-2, Ubuntu 22.04)
 - **외부 IP**: `34.64.251.84` (고정 IP)
+- **도메인**: `ralphgrip.com` (HTTPS, Let's Encrypt)
 - **GitHub 레포**: `kubony/ralphgrip`
 - **앱 경로**: `/home/inkeun/ralphgrip`
 - **프로세스**: PM2 (`ralphgrip` 포트 3000, `ralphgrip-mcp` 포트 3001)
-- **리버스 프록시**: nginx (80 → 3000, /mcp → 3001)
+- **리버스 프록시**: nginx (80→301→443, 443 → 3000, /mcp → 3001, /health → 3001)
 
 ### 배포 명령어
 
@@ -456,7 +457,7 @@ GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_APP_URL` — 프로덕션: `http://34.64.251.84`, 개발: `http://localhost:3000`
+- `NEXT_PUBLIC_APP_URL` — 프로덕션: `https://ralphgrip.com`, 개발: `http://localhost:3000`
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `SLACK_BOT_TOKEN`
