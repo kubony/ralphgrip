@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { ProfileSettings } from './profile-settings'
 import { AppearanceSettings } from './appearance-settings'
 import { AccountSettings } from './account-settings'
+import { ApiKeysSettings } from './api-keys-settings'
 import Activity from 'lucide-react/dist/esm/icons/activity'
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
 import Shield from 'lucide-react/dist/esm/icons/shield'
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
   const sections = [
     { id: 'profile', label: 'Profile' },
     { id: 'appearance', label: 'Appearance' },
+    { id: 'api-keys', label: 'API Keys' },
     { id: 'activity', label: 'Activity', href: '/settings/activity' },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', href: '/settings/admin' }] : []),
     { id: 'account', label: 'Account', destructive: true },
@@ -75,6 +77,8 @@ export default async function SettingsPage() {
             <ProfileSettings profile={profileData} />
             <Separator />
             <AppearanceSettings />
+            <Separator />
+            <ApiKeysSettings />
             <Separator />
 
             {/* Activity Log Link */}

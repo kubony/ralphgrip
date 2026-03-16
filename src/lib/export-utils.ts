@@ -1,3 +1,6 @@
+import { format } from 'date-fns'
+import { parseWorkItemDateTime } from './work-item-datetime'
+
 /**
  * CSV/PDF 내보내기 공통 유틸리티
  */
@@ -71,11 +74,11 @@ export function visibilityLabel(visibility: string): string {
 }
 
 /**
- * ISO 날짜 → 한국 날짜 형식 (YYYY-MM-DD)
+ * ISO 날짜/시간 → 내보내기 형식 (YYYY-MM-DD HH:mm:ss)
  */
 export function formatDateForExport(dateStr: string | null): string {
   if (!dateStr) return ''
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return ''
-  return d.toISOString().slice(0, 10)
+  const parsed = parseWorkItemDateTime(dateStr)
+  if (!parsed) return ''
+  return format(parsed, 'yyyy-MM-dd HH:mm:ss')
 }

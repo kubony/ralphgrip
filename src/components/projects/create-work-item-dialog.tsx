@@ -181,20 +181,22 @@ export function CreateWorkItemDialog({ projectId, trackers, statuses, members }:
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="startDate">목표 시작일</Label>
+                <Label htmlFor="startDate">목표 시작일시</Label>
                 <Input
                   id="startDate"
                   name="startDate"
-                  type="date"
+                  type="datetime-local"
+                  step="1"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="dueDate">목표 마감일</Label>
+                <Label htmlFor="dueDate">목표 마감일시</Label>
                 <Input
                   id="dueDate"
                   name="dueDate"
-                  type="date"
+                  type="datetime-local"
+                  step="1"
                 />
               </div>
             </div>

@@ -4,6 +4,8 @@ import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { scrollMaskBoth } from '@/lib/motion'
+import { formatWorkItemDateTime } from '@/lib/work-item-datetime'
+import { useDateTimeDisplay } from '@/hooks/use-datetime-display'
 import Pin from 'lucide-react/dist/esm/icons/pin'
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link'
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down'
@@ -32,10 +34,8 @@ const phaseConfig: { phase: Phase; color: string }[] = [
   { phase: 'done', color: '#22c55e' },
 ]
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return null
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+function formatDate(dateStr: string | null, showSeconds: boolean) {
+  return formatWorkItemDateTime(dateStr, 'ko-KR', { showSeconds })
 }
 
 function isOverdue(dateStr: string | null, isClosed: boolean) {
@@ -111,7 +111,7 @@ function KanbanStatusBadge({ item, statusesByProject, onStatusChange }: {
   )
 }
 
-function KanbanCard({ item, isPinned, onTogglePin, onItemSelect, onItemDoubleClick, statusesByProject, onStatusChange }: {
+function KanbanCard({ item, isPinned, onTogglePin, onItemSelect, onItemDoubleClick, statusesByProject, onStatusChange, showSeconds }: {
   item: MyWorkItem
   isPinned: boolean
   onTogglePin: (id: string) => void
@@ -119,6 +119,7 @@ function KanbanCard({ item, isPinned, onTogglePin, onItemSelect, onItemDoubleCli
   onItemDoubleClick: (item: MyWorkItem) => void
   statusesByProject: StatusesByProject
   onStatusChange: (itemId: string, statusId: string, projectId: string) => Promise<void>
+  showSeconds: boolean
 }) {
   const router = useRouter()
   const overdue = isOverdue(item.due_date, item.status?.is_closed ?? false)
@@ -211,7 +212,7 @@ function KanbanCard({ item, isPinned, onTogglePin, onItemSelect, onItemDoubleCli
         <div className="flex-1" />
         {item.due_date && (
           <span className={cn('text-[10px]', overdue ? 'text-red-500 font-medium' : 'text-muted-foreground')}>
-            {formatDate(item.due_date)}
+            {formatDate(item.due_date, showSeconds)}
           </span>
         )}
       </div>
@@ -219,7 +220,7 @@ function KanbanCard({ item, isPinned, onTogglePin, onItemSelect, onItemDoubleCli
   )
 }
 
-function KanbanColumn({ phase, color, items, pinnedIds, onTogglePin, onItemSelect, onItemDoubleClick, statusesByProject, onStatusChange }: {
+function KanbanColumn({ phase, color, items, pinnedIds, onTogglePin, onItemSelect, onItemDoubleClick, statusesByProject, onStatusChange, showSeconds }: {
   phase: Phase
   color: string
   items: MyWorkItem[]
@@ -229,6 +230,7 @@ function KanbanColumn({ phase, color, items, pinnedIds, onTogglePin, onItemSelec
   onItemDoubleClick: (item: MyWorkItem) => void
   statusesByProject: StatusesByProject
   onStatusChange: (itemId: string, statusId: string, projectId: string) => Promise<void>
+  showSeconds: boolean
 }) {
   return (
     <div className="flex flex-col min-w-[280px] max-w-[360px] flex-1 rounded-lg border bg-muted/30">
@@ -260,6 +262,7 @@ function KanbanColumn({ phase, color, items, pinnedIds, onTogglePin, onItemSelec
                 onItemDoubleClick={onItemDoubleClick}
                 statusesByProject={statusesByProject}
                 onStatusChange={onStatusChange}
+                showSeconds={showSeconds}
               />
             ))
           )}
@@ -270,6 +273,7 @@ function KanbanColumn({ phase, color, items, pinnedIds, onTogglePin, onItemSelec
 }
 
 export function MyWorkKanbanView({ items, pinnedIds, onTogglePin, statusesByProject, onStatusChange, onItemSelect }: MyWorkKanbanViewProps) {
+  const { showSeconds } = useDateTimeDisplay()
   const grouped: Record<Phase, MyWorkItem[]> = { todo: [], in_progress: [], done: [] }
   const [detailItem, setDetailItem] = useState<MyWorkItem | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -299,6 +303,7 @@ export function MyWorkKanbanView({ items, pinnedIds, onTogglePin, statusesByProj
             onItemDoubleClick={handleItemDoubleClick}
             statusesByProject={statusesByProject}
             onStatusChange={onStatusChange}
+            showSeconds={showSeconds}
           />
         ))}
       </div>

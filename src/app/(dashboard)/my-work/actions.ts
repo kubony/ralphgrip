@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import { normalizeWorkItemDateTimePatch } from '@/lib/work-item-datetime'
 
 export async function toggleWorkItemPin(workItemId: string, pinned: boolean) {
   const supabase = await createClient()
@@ -45,9 +46,11 @@ export async function updateMyWorkItemDates(
 
   if (!membership) return { error: '해당 프로젝트의 멤버가 아닙니다.' }
 
+  const normalizedDates = normalizeWorkItemDateTimePatch(dates)
+
   const { error } = await supabase
     .from('work_items')
-    .update(dates)
+    .update(normalizedDates)
     .eq('id', workItemId)
 
   if (error) return { error: error.message }
@@ -77,9 +80,11 @@ export async function updateMyWorkItemField(
   if (!membership) return { error: '해당 프로젝트의 멤버가 아닙니다.' }
   if (membership.role === 'viewer') return { error: '보기 전용 권한으로는 수정할 수 없습니다.' }
 
+  const normalizedUpdates = normalizeWorkItemDateTimePatch(updates)
+
   const { error } = await supabase
     .from('work_items')
-    .update(updates)
+    .update(normalizedUpdates)
     .eq('id', workItemId)
 
   if (error) return { error: error.message }

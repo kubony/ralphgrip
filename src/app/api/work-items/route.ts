@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { getServiceClient } from '@/lib/supabase/service'
 import { getNextWorkItemPosition, isWorkItemPositionConflict, MAX_POSITION_INSERT_ATTEMPTS } from '@/lib/server-actions/work-item-position'
+import { normalizeWorkItemDateTimeForStorage } from '@/lib/work-item-datetime'
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -74,8 +75,8 @@ export async function POST(request: NextRequest) {
         assignee_id: item.assigneeId || null,
         reporter_id: item.reporterId,
         description: item.description?.trim() || null,
-        start_date: item.startDate || null,
-        due_date: item.dueDate || null,
+        start_date: normalizeWorkItemDateTimeForStorage(item.startDate),
+        due_date: normalizeWorkItemDateTimeForStorage(item.dueDate),
         position: newPosition,
       }
     })

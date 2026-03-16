@@ -866,6 +866,7 @@ export type Database = {
         Row: {
           actual_end_date: string | null
           actual_hours: number | null
+          actual_resolved_date: string | null
           actual_start_date: string | null
           agent_assignee_id: string | null
           agent_reporter_id: string | null
@@ -897,6 +898,7 @@ export type Database = {
         Insert: {
           actual_end_date?: string | null
           actual_hours?: number | null
+          actual_resolved_date?: string | null
           actual_start_date?: string | null
           agent_assignee_id?: string | null
           agent_reporter_id?: string | null
@@ -928,6 +930,7 @@ export type Database = {
         Update: {
           actual_end_date?: string | null
           actual_hours?: number | null
+          actual_resolved_date?: string | null
           actual_start_date?: string | null
           agent_assignee_id?: string | null
           agent_reporter_id?: string | null
@@ -1092,6 +1095,7 @@ export type Database = {
         Row: {
           actual_end_date: string | null
           actual_hours: number | null
+          actual_resolved_date: string | null
           actual_start_date: string | null
           ai_metadata: Json | null
           assignee_id: string | null
@@ -1121,6 +1125,7 @@ export type Database = {
         Insert: {
           actual_end_date?: string | null
           actual_hours?: number | null
+          actual_resolved_date?: string | null
           actual_start_date?: string | null
           ai_metadata?: Json | null
           assignee_id?: string | null
@@ -1150,6 +1155,7 @@ export type Database = {
         Update: {
           actual_end_date?: string | null
           actual_hours?: number | null
+          actual_resolved_date?: string | null
           actual_start_date?: string | null
           ai_metadata?: Json | null
           assignee_id?: string | null

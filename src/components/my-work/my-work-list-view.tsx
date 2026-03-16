@@ -14,6 +14,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { WorkItemDetailDialog } from '@/components/projects/work-item-detail-dialog'
+import { formatWorkItemDateTime } from '@/lib/work-item-datetime'
+import { useDateTimeDisplay } from '@/hooks/use-datetime-display'
+import { DateTimeDisplayToggle } from '@/components/ui/datetime-display-toggle'
 import type { MyWorkItem, SortField, SortOrder, StatusesByProject } from './types'
 import { priorityLabels, priorityColors, toWorkItemWithRelations } from './types'
 
@@ -37,10 +40,8 @@ function SortIcon({ field, sortBy, sortOrder }: { field: SortField; sortBy: Sort
     : <ArrowDown className="h-3.5 w-3.5" />
 }
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+function formatDate(dateStr: string | null, showSeconds: boolean) {
+  return formatWorkItemDateTime(dateStr, 'ko-KR', { showSeconds })
 }
 
 function isOverdue(dateStr: string | null, isClosed: boolean) {
@@ -161,6 +162,7 @@ function PriorityCell({ item, onFieldChange }: {
 }
 
 export function MyWorkListView({ items, sortBy, sortOrder, onSortChange, pinnedIds, onTogglePin, statusesByProject, onStatusChange, onItemSelect, onFieldChange }: MyWorkListViewProps) {
+  const { showSeconds, toggleShowSeconds } = useDateTimeDisplay()
   const [detailItem, setDetailItem] = useState<MyWorkItem | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -188,12 +190,15 @@ export function MyWorkListView({ items, sortBy, sortOrder, onSortChange, pinnedI
     { key: 'title', label: '제목', sortable: false, className: 'flex-1 min-w-[200px]' },
     { key: 'status', label: '상태', sortable: true, className: 'w-[120px]' },
     { key: 'priority', label: '우선순위', sortable: true, className: 'w-[100px]' },
-    { key: 'due_date', label: '마감일', sortable: true, className: 'w-[100px]' },
-    { key: 'updated_at', label: '업데이트', sortable: true, className: 'w-[100px]' },
+    { key: 'due_date', label: '마감일', sortable: true, className: 'w-[180px]' },
+    { key: 'updated_at', label: '업데이트', sortable: true, className: 'w-[180px]' },
   ]
 
   return (
     <>
+    <div className="mb-3 flex justify-end">
+      <DateTimeDisplayToggle showSeconds={showSeconds} onToggle={toggleShowSeconds} />
+    </div>
     <div className="border rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center bg-muted/50 border-b text-xs font-medium text-muted-foreground">
@@ -251,7 +256,7 @@ export function MyWorkListView({ items, sortBy, sortOrder, onSortChange, pinnedI
                 </div>
 
                 {/* 프로젝트 */}
-                <div className="w-[100px] px-3 py-2.5">
+                <div className="w-[180px] px-3 py-2.5">
                   <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                     {item.project?.key ?? '-'}
                   </span>
@@ -292,18 +297,18 @@ export function MyWorkListView({ items, sortBy, sortOrder, onSortChange, pinnedI
                 </div>
 
                 {/* 마감일 */}
-                <div className="w-[100px] px-3 py-2.5">
+                <div className="w-[180px] px-3 py-2.5">
                   <span className={cn(
                     'text-xs',
                     isOverdue(item.due_date, item.status?.is_closed ?? false) && 'text-red-500 font-medium'
                   )}>
-                    {formatDate(item.due_date)}
+                    {formatDate(item.due_date, showSeconds)}
                   </span>
                 </div>
 
                 {/* 업데이트 */}
-                <div className="w-[100px] px-3 py-2.5 text-xs text-muted-foreground">
-                  {formatDate(item.updated_at)}
+                <div className="w-[180px] px-3 py-2.5 text-xs text-muted-foreground">
+                  {formatDate(item.updated_at, showSeconds)}
                 </div>
               </div>
             )

@@ -17,6 +17,7 @@ export interface MyWorkItem {
   due_date: string | null
   start_date: string | null
   actual_start_date?: string | null
+  actual_resolved_date?: string | null
   actual_end_date?: string | null
   estimated_hours: number | null
   actual_hours: number | null
@@ -95,7 +96,7 @@ export interface Filters {
   dueDate: DueDateFilter
 }
 
-const TODO_STATUS_NAMES = new Set(['open', 'draft', 'to do', 'new'])
+const TODO_STATUS_NAMES = new Set(['open', 'todo', 'draft', 'to do', 'new'])
 
 export function getPhase(status: MyWorkItem['status']): Phase {
   if (!status) return 'todo'

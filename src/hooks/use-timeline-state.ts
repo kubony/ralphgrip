@@ -3,22 +3,29 @@
 import { useState, useMemo, useCallback } from 'react'
 import {
   differenceInCalendarDays,
+  differenceInMilliseconds,
   addDays,
+  addHours,
   subDays,
+  subHours,
   parseISO,
   startOfMonth,
   endOfMonth,
+  startOfDay,
+  endOfDay,
   startOfQuarter,
   endOfQuarter,
   eachDayOfInterval,
+  eachHourOfInterval,
   eachWeekOfInterval,
   eachMonthOfInterval,
   isWeekend,
   isSameDay,
+  isSameHour,
   format,
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
-export type ZoomLevel = 'day' | 'week' | 'month' | 'quarter' | 'half' | 'year'
+export type ZoomLevel = 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'half' | 'year'
 
 export interface TimelineItem {
   start_date: string | null
@@ -26,6 +33,7 @@ export interface TimelineItem {
 }
 
 const ZOOM_CONFIG = {
+  hour: { cellWidth: 64, pxPerDay: 64 * 24, snapMs: 60 * 60 * 1000 },
   day: { cellWidth: 40, pxPerDay: 40 },
   week: { cellWidth: 120, pxPerDay: 120 / 7 },
   month: { cellWidth: 160, pxPerDay: 160 / 30 },
@@ -63,6 +71,7 @@ export interface TimelineState {
   zoomLevel: ZoomLevel
   setZoomLevel: (level: ZoomLevel) => void
   pxPerDay: number
+  snapMs: number
   dateToX: (date: Date) => number
   xToDate: (x: number) => Date
   dateRange: DateRange
@@ -85,6 +94,7 @@ export function useTimelineState(
   const today = useMemo(() => new Date(), [])
 
   const { pxPerDay } = ZOOM_CONFIG[zoomLevel]
+  const snapMs = ZOOM_CONFIG[zoomLevel].snapMs ?? 24 * 60 * 60 * 1000
 
   // 날짜 범위 계산: 모든 항목의 min(start_date)~max(due_date) + 양쪽 여유
   const dateRange = useMemo<DateRange>(() => {
@@ -95,6 +105,13 @@ export function useTimelineState(
     }
 
     if (dates.length === 0) {
+      if (zoomLevel === 'hour') {
+        return {
+          start: startOfDay(subHours(today, 24)),
+          end: endOfDay(addHours(today, 24)),
+        }
+      }
+
       // 날짜가 모두 null: 오늘 기준 전후 3개월
       return {
         start: startOfMonth(subDays(today, 90)),
@@ -109,37 +126,69 @@ export function useTimelineState(
       if (d > maxDate) maxDate = d
     }
 
+    if (zoomLevel === 'hour') {
+      return {
+        start: startOfDay(subHours(minDate, 24)),
+        end: endOfDay(addHours(maxDate, 24)),
+      }
+    }
+
     // 양쪽 2주 여유 + 월 시작/끝으로 정렬
     const start = startOfMonth(subDays(minDate, 14))
     const end = endOfMonth(addDays(maxDate, 14))
     return { start, end }
-  }, [workItems, today])
+  }, [workItems, today, zoomLevel])
 
   const dateToX = useCallback(
     (date: Date) => {
+      if (zoomLevel === 'hour') {
+        return differenceInMilliseconds(date, dateRange.start) * (pxPerDay / (24 * 60 * 60 * 1000))
+      }
       const days = differenceInCalendarDays(date, dateRange.start)
       return days * pxPerDay
     },
-    [dateRange.start, pxPerDay]
+    [dateRange.start, pxPerDay, zoomLevel]
   )
 
   const xToDate = useCallback(
     (x: number) => {
+      if (zoomLevel === 'hour') {
+        const hours = Math.round(x / ZOOM_CONFIG.hour.cellWidth)
+        return addHours(dateRange.start, hours)
+      }
       const days = Math.round(x / pxPerDay)
       return addDays(dateRange.start, days)
     },
-    [dateRange.start, pxPerDay]
+    [dateRange.start, pxPerDay, zoomLevel]
   )
 
   const totalWidth = useMemo(() => {
+    if (zoomLevel === 'hour') {
+      return differenceInMilliseconds(dateRange.end, dateRange.start) * (pxPerDay / (24 * 60 * 60 * 1000))
+    }
     const totalDays = differenceInCalendarDays(dateRange.end, dateRange.start) + 1
     return totalDays * pxPerDay
-  }, [dateRange, pxPerDay])
+  }, [dateRange, pxPerDay, zoomLevel])
 
   const todayX = useMemo(() => dateToX(today), [dateToX, today])
 
   // 상단 행: 월 라벨 (quarter 줌에서는 연도 라벨)
   const headerMonths = useMemo<HeaderMonth[]>(() => {
+    if (zoomLevel === 'hour') {
+      const days = eachDayOfInterval(dateRange)
+      return days.map((dayStart) => {
+        const x = dateToX(dayStart)
+        const nextDay = addDays(dayStart, 1)
+        const width = Math.max(dateToX(nextDay) - x, ZOOM_CONFIG.hour.cellWidth)
+        return {
+          date: dayStart,
+          label: format(dayStart, 'M/d (EEE)', { locale: ko }),
+          x,
+          width,
+        }
+      })
+    }
+
     if (zoomLevel === 'quarter' || zoomLevel === 'half' || zoomLevel === 'year') {
       const startYear = dateRange.start.getFullYear()
       const endYear = dateRange.end.getFullYear()
@@ -179,6 +228,18 @@ export function useTimelineState(
 
   // 하단 행: 줌에 따라 일/주 셀
   const headerCells = useMemo<HeaderCell[]>(() => {
+    if (zoomLevel === 'hour') {
+      const hours = eachHourOfInterval(dateRange)
+      return hours.map((hour) => ({
+        date: hour,
+        label: format(hour, 'HH:mm'),
+        x: dateToX(hour),
+        width: ZOOM_CONFIG.hour.cellWidth,
+        isWeekend: isWeekend(hour),
+        isToday: isSameHour(hour, today),
+      }))
+    }
+
     if (zoomLevel === 'day') {
       const days = eachDayOfInterval(dateRange)
       return days.map((d) => ({
@@ -295,6 +356,7 @@ export function useTimelineState(
     zoomLevel,
     setZoomLevel,
     pxPerDay,
+    snapMs,
     dateToX,
     xToDate,
     dateRange,

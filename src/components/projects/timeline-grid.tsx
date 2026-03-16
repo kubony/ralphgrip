@@ -24,18 +24,25 @@ const TimelineGrid = React.memo<TimelineGridProps>(({
   dateToX,
 }) => {
   // Calculate cell width based on zoom level
-  const cellWidth = zoomLevel === 'day' ? pxPerDay : zoomLevel === 'week' ? pxPerDay * 7 : pxPerDay * 30
+  const cellWidth =
+    zoomLevel === 'hour'
+      ? pxPerDay / 24
+      : zoomLevel === 'day'
+        ? pxPerDay
+        : zoomLevel === 'week'
+          ? pxPerDay * 7
+          : pxPerDay * 30
 
-  // Calculate weekend shading (only for day zoom level)
+  // Calculate weekend shading
   const weekendRanges = React.useMemo(() => {
-    if (zoomLevel !== 'day') return []
+    if (zoomLevel !== 'day' && zoomLevel !== 'hour') return []
 
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end })
     return days.filter((d) => isWeekend(d)).map((day) => ({
       left: dateToX(day),
-      width: pxPerDay,
+      width: zoomLevel === 'hour' ? pxPerDay : cellWidth,
     }))
-  }, [zoomLevel, dateRange.start, dateRange.end, dateToX, pxPerDay])
+  }, [zoomLevel, dateRange.start, dateRange.end, dateToX, pxPerDay, cellWidth])
 
   // Check if today marker should be visible
   const showTodayMarker = todayX >= 0 && todayX <= totalWidth

@@ -19,10 +19,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { DateTimeDisplayToggle } from '@/components/ui/datetime-display-toggle'
 import { CommentsSection } from '@/components/projects/comments-section'
 import { getProjectMetadata } from '@/app/(dashboard)/my-work/actions'
 import type { MyWorkItem, StatusesByProject } from './types'
 import type { StatusRef, TrackerRef, PersonRef } from '@/types/database'
+import { useDateTimeDisplay } from '@/hooks/use-datetime-display'
+import { formatWorkItemDateTime, normalizeWorkItemDateTimeForStorage, toDateTimeLocalInputValue } from '@/lib/work-item-datetime'
 
 import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle'
 import Tag from 'lucide-react/dist/esm/icons/tag'
@@ -67,12 +70,15 @@ export function MyWorkPropertySheet({
   onFieldChange,
   onStatusChange,
 }: MyWorkPropertySheetProps) {
+  const { showSeconds, toggleShowSeconds } = useDateTimeDisplay()
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState('')
   const [localStartDate, setLocalStartDate] = useState('')
   const [localDueDate, setLocalDueDate] = useState('')
+  const [localActualStartDate, setLocalActualStartDate] = useState('')
+  const [localActualEndDate, setLocalActualEndDate] = useState('')
   const [localEstimatedHours, setLocalEstimatedHours] = useState('')
   const [localActualHours, setLocalActualHours] = useState('')
 
@@ -83,8 +89,10 @@ export function MyWorkPropertySheet({
   // 아이템 변경 시 로컬 상태 초기화
   useEffect(() => {
     if (!item) return
-    setLocalStartDate(item.start_date ?? '')
-    setLocalDueDate(item.due_date ?? '')
+    setLocalStartDate(toDateTimeLocalInputValue(item.start_date))
+    setLocalDueDate(toDateTimeLocalInputValue(item.due_date))
+    setLocalActualStartDate(toDateTimeLocalInputValue(item.actual_start_date))
+    setLocalActualEndDate(toDateTimeLocalInputValue(item.actual_end_date))
     setLocalEstimatedHours(item.estimated_hours?.toString() ?? '')
     setLocalActualHours(item.actual_hours?.toString() ?? '')
     setIsEditing(false)
@@ -316,27 +324,64 @@ export function MyWorkPropertySheet({
           <div>
             <p className="text-xs text-muted-foreground mb-1.5 px-1">계획 일정</p>
             <div className="space-y-1">
-              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="시작일">
+              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="시작일시">
                 <DateInputField
                   value={localStartDate}
                   onChange={(e) => setLocalStartDate(e.target.value)}
                   onBlur={() => {
-                    const val = localStartDate || null
-                    if (val !== (item.start_date ?? null)) {
+                    const val = normalizeWorkItemDateTimeForStorage(localStartDate)
+                    setLocalStartDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(item.start_date)) {
                       handleFieldChange('start_date', val)
                     }
                   }}
                   disabled={isSaving}
                 />
               </PropertyField>
-              <PropertyField icon={<Calendar className="h-4 w-4" />} label="마감일">
+              <PropertyField icon={<Calendar className="h-4 w-4" />} label="마감일시">
                 <DateInputField
                   value={localDueDate}
                   onChange={(e) => setLocalDueDate(e.target.value)}
                   onBlur={() => {
-                    const val = localDueDate || null
-                    if (val !== (item.due_date ?? null)) {
+                    const val = normalizeWorkItemDateTimeForStorage(localDueDate)
+                    setLocalDueDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(item.due_date)) {
                       handleFieldChange('due_date', val)
+                    }
+                  }}
+                  disabled={isSaving}
+                />
+              </PropertyField>
+            </div>
+          </div>
+
+          {/* 실적 일정 */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-1.5 px-1">실적 일정</p>
+            <div className="space-y-1">
+              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="시작일시">
+                <DateInputField
+                  value={localActualStartDate}
+                  onChange={(e) => setLocalActualStartDate(e.target.value)}
+                  onBlur={() => {
+                    const val = normalizeWorkItemDateTimeForStorage(localActualStartDate)
+                    setLocalActualStartDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(item.actual_start_date)) {
+                      handleFieldChange('actual_start_date', val)
+                    }
+                  }}
+                  disabled={isSaving}
+                />
+              </PropertyField>
+              <PropertyField icon={<Calendar className="h-4 w-4" />} label="종료일시">
+                <DateInputField
+                  value={localActualEndDate}
+                  onChange={(e) => setLocalActualEndDate(e.target.value)}
+                  onBlur={() => {
+                    const val = normalizeWorkItemDateTimeForStorage(localActualEndDate)
+                    setLocalActualEndDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(item.actual_end_date)) {
+                      handleFieldChange('actual_end_date', val)
                     }
                   }}
                   disabled={isSaving}
@@ -387,14 +432,17 @@ export function MyWorkPropertySheet({
 
           {/* 메타 정보 */}
           <Separator />
+          <div className="flex justify-end">
+            <DateTimeDisplayToggle showSeconds={showSeconds} onToggle={toggleShowSeconds} />
+          </div>
           <div className="text-xs text-muted-foreground space-y-1">
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3" />
-              <span>생성: {new Date(item.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span>생성: {formatWorkItemDateTime(item.created_at, 'ko-KR', { showSeconds })}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3" />
-              <span>수정: {new Date(item.updated_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span>수정: {formatWorkItemDateTime(item.updated_at, 'ko-KR', { showSeconds })}</span>
             </div>
           </div>
 
@@ -439,7 +487,8 @@ function DateInputField({
   return (
     <Input
       ref={inputRef}
-      type="date"
+      type="datetime-local"
+      step="1"
       className="h-8"
       value={value}
       onChange={onChange}

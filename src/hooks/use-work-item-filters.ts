@@ -107,6 +107,7 @@ export function useWorkItemFilters(
     const counts = new Map<string, number>()
     for (const item of workItems) {
       if (!item.status_id) continue
+      if (item.tracker?.name === 'Folder') continue
       counts.set(item.status_id, (counts.get(item.status_id) || 0) + 1)
     }
     return counts

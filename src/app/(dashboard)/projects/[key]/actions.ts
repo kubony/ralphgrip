@@ -9,6 +9,7 @@ import { trackEvent } from '@/lib/track-event'
 import { notifySlack, buildWorkItemCreated, buildStatusChanged, buildDescriptionUpdated, buildCommentCreated, sendTestSlackMessage, inviteToSlackChannel } from '@/lib/slack-notify'
 import { createNotification, createNotifications, extractMentionedUserIds, stripMentionMarkup } from '@/lib/notifications'
 import { getNextWorkItemPosition, isWorkItemPositionConflict, MAX_POSITION_INSERT_ATTEMPTS } from '@/lib/server-actions/work-item-position'
+import { normalizeWorkItemDateTimeForStorage, normalizeWorkItemDateTimePatch } from '@/lib/work-item-datetime'
 
 async function requireWriteAccess(projectId: string): Promise<{
   error: string | null
@@ -225,8 +226,8 @@ export async function createWorkItem(formData: FormData) {
   const description = formData.get('description') as string || null
   const assigneeIdRaw = formData.get('assigneeId') as string || null
   const assigneeId = assigneeIdRaw && assigneeIdRaw !== '__none__' ? assigneeIdRaw : null
-  const startDate = formData.get('startDate') as string || null
-  const dueDate = formData.get('dueDate') as string || null
+  const startDate = normalizeWorkItemDateTimeForStorage(formData.get('startDate') as string || null)
+  const dueDate = normalizeWorkItemDateTimeForStorage(formData.get('dueDate') as string || null)
   const parentId = formData.get('parentId') as string || null
   const createdByAi = formData.get('createdByAi') === 'true'
   const aiMetadataRaw = formData.get('aiMetadata') as string | null
@@ -404,6 +405,7 @@ export async function updateWorkItem(
     due_date?: string | null
     start_date?: string | null
     actual_start_date?: string | null
+    actual_resolved_date?: string | null
     actual_end_date?: string | null
     estimated_hours?: number | null
     actual_hours?: number | null
@@ -418,11 +420,12 @@ export async function updateWorkItem(
 ) {
   const { error: authError, supabase, user } = await requireWriteAccess(projectId)
   if (authError || !supabase || !user) return { error: authError || '권한 확인 실패' }
+  const normalizedUpdates = normalizeWorkItemDateTimePatch(updates)
 
   // 알림용: 업데이트 전 현재 상태 캡처 (상태 변경, 제목 확정, 본문 수정, 담당자 변경 알림)
   const PLACEHOLDER_TITLES = ['새 아이템', '새 폴더']
   let itemBefore: { title: string; number: number; status_id: string | null; tracker_id: string; assignee_id: string | null } | null = null
-  if (updates.status_id || updates.title || updates.description !== undefined || updates.assignee_id !== undefined) {
+  if (normalizedUpdates.status_id || normalizedUpdates.title || normalizedUpdates.description !== undefined || normalizedUpdates.assignee_id !== undefined) {
     const { data } = await supabase
       .from('work_items')
       .select('title, number, status_id, tracker_id, assignee_id')
@@ -433,45 +436,45 @@ export async function updateWorkItem(
 
   const { error } = await supabase
     .from('work_items')
-    .update(updates)
+    .update(normalizedUpdates)
     .eq('id', workItemId)
 
   if (error) {
     return { error: error.message }
   }
 
-  void trackEvent(user.id, 'work_item.updated', projectId, { work_item_id: workItemId, changed_fields: Object.keys(updates) })
+  void trackEvent(user.id, 'work_item.updated', projectId, { work_item_id: workItemId, changed_fields: Object.keys(normalizedUpdates) })
 
   // 제목 확정 시 Slack "생성됨" 알림 (임시 제목 → 실제 제목으로 변경된 경우)
-  if (updates.title && itemBefore && PLACEHOLDER_TITLES.includes(itemBefore.title) && !PLACEHOLDER_TITLES.includes(updates.title)) {
+  if (normalizedUpdates.title && itemBefore && PLACEHOLDER_TITLES.includes(itemBefore.title) && !PLACEHOLDER_TITLES.includes(normalizedUpdates.title)) {
     void (async () => {
       const [{ data: tracker }, { data: status }] = await Promise.all([
         supabase.from('trackers').select('name').eq('id', itemBefore!.tracker_id).single(),
         supabase.from('statuses').select('name').eq('id', itemBefore!.status_id!).single(),
       ])
       void notifySlack(projectId, (ctx) =>
-        buildWorkItemCreated(ctx, updates.title!, itemBefore!.number, tracker?.name ?? '', status?.name ?? ''),
+        buildWorkItemCreated(ctx, normalizedUpdates.title!, itemBefore!.number, tracker?.name ?? '', status?.name ?? ''),
       )
     })()
   }
 
   // 상태 변경 시 Slack 알림
-  if (updates.status_id && itemBefore && itemBefore.status_id !== updates.status_id) {
+  if (normalizedUpdates.status_id && itemBefore && itemBefore.status_id !== normalizedUpdates.status_id) {
     void (async () => {
       const [{ data: oldStatus }, { data: newStatus }] = await Promise.all([
         supabase.from('statuses').select('name').eq('id', itemBefore!.status_id!).single(),
-        supabase.from('statuses').select('name').eq('id', updates.status_id!).single(),
+        supabase.from('statuses').select('name').eq('id', normalizedUpdates.status_id!).single(),
       ])
       void notifySlack(projectId, (ctx) =>
-        buildStatusChanged(ctx, updates.title ?? itemBefore!.title, itemBefore!.number, oldStatus?.name ?? '', newStatus?.name ?? ''),
+        buildStatusChanged(ctx, normalizedUpdates.title ?? itemBefore!.title, itemBefore!.number, oldStatus?.name ?? '', newStatus?.name ?? ''),
       )
     })()
   }
 
   // 본문 수정 시 Slack 알림
-  if (updates.description !== undefined && itemBefore) {
+  if (normalizedUpdates.description !== undefined && itemBefore) {
     void notifySlack(projectId, (ctx) =>
-      buildDescriptionUpdated(ctx, itemBefore!.title, itemBefore!.number, updates.description ?? undefined),
+      buildDescriptionUpdated(ctx, itemBefore!.title, itemBefore!.number, normalizedUpdates.description ?? undefined),
     )
   }
 
@@ -479,12 +482,12 @@ export async function updateWorkItem(
   if (itemBefore && !PLACEHOLDER_TITLES.includes(itemBefore.title)) {
     void (async () => {
       const projectKey = await getCachedProjectKey(projectId)
-      const itemTitle = updates.title ?? itemBefore!.title
+      const itemTitle = normalizedUpdates.title ?? itemBefore!.title
 
       // 담당자 변경 → 새 담당자에게 알림
-      if (updates.assignee_id && updates.assignee_id !== itemBefore!.assignee_id) {
+      if (normalizedUpdates.assignee_id && normalizedUpdates.assignee_id !== itemBefore!.assignee_id) {
         void createNotification({
-          userId: updates.assignee_id,
+          userId: normalizedUpdates.assignee_id,
           type: 'assigned',
           projectId,
           projectKey,
@@ -496,10 +499,10 @@ export async function updateWorkItem(
       }
 
       // 상태 변경 → 담당자에게 알림 (변경자 ≠ 담당자)
-      if (updates.status_id && itemBefore!.status_id !== updates.status_id && itemBefore!.assignee_id && itemBefore!.assignee_id !== user.id) {
+      if (normalizedUpdates.status_id && itemBefore!.status_id !== normalizedUpdates.status_id && itemBefore!.assignee_id && itemBefore!.assignee_id !== user.id) {
         const [{ data: oldStatus }, { data: newStatus }] = await Promise.all([
           supabase.from('statuses').select('name').eq('id', itemBefore!.status_id!).single(),
-          supabase.from('statuses').select('name').eq('id', updates.status_id!).single(),
+          supabase.from('statuses').select('name').eq('id', normalizedUpdates.status_id!).single(),
         ])
         void createNotification({
           userId: itemBefore!.assignee_id,
@@ -801,17 +804,18 @@ export async function batchUpdateField(
 ) {
   const { error: authError, supabase, user } = await requireWriteAccess(projectId)
   if (authError || !supabase || !user) return { error: authError || '권한 확인 실패' }
+  const normalizedUpdates = normalizeWorkItemDateTimePatch(updates)
 
   const { error } = await supabase
     .from('work_items')
-    .update(updates)
+    .update(normalizedUpdates)
     .in('id', workItemIds)
 
   if (error) {
     return { error: error.message }
   }
 
-  void trackEvent(user.id, 'work_item.batch_updated', projectId, { count: workItemIds.length, changed_fields: Object.keys(updates) })
+  void trackEvent(user.id, 'work_item.batch_updated', projectId, { count: workItemIds.length, changed_fields: Object.keys(normalizedUpdates) })
 
   invalidateProjectItems(projectId)
   await revalidateProject(projectId)
@@ -1654,7 +1658,7 @@ export async function testSlackNotification(projectId: string) {
 async function requireAdminAccess(projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: '로그인이 필요합니다.', supabase: null }
+  if (!user) return { error: '로그인이 필요합니다.', supabase: null, user: null }
 
   const { data: member } = await supabase
     .from('project_members')
@@ -1664,10 +1668,10 @@ async function requireAdminAccess(projectId: string) {
     .single()
 
   if (!member || !['owner', 'admin'].includes(member.role)) {
-    return { error: '관리자 권한이 필요합니다.', supabase: null }
+    return { error: '관리자 권한이 필요합니다.', supabase: null, user: null }
   }
 
-  return { error: null, supabase }
+  return { error: null, supabase, user }
 }
 
 export async function getAgents(projectId: string) {
@@ -1697,8 +1701,8 @@ export async function createAgent(
   projectId: string,
   input: { name: string; display_name: string; agent_kind: string; agent_role: string; agent_model?: string; agent_runtime: string; description?: string },
 ) {
-  const { error: authError, supabase } = await requireAdminAccess(projectId)
-  if (authError || !supabase) return { error: authError }
+  const { error: authError, supabase, user } = await requireAdminAccess(projectId)
+  if (authError || !supabase || !user) return { error: authError }
 
   const rawKey = `ag_${crypto.randomUUID().replace(/-/g, '')}`
   const prefix = rawKey.slice(0, 11) + '...'
@@ -1719,6 +1723,7 @@ export async function createAgent(
       agent_model: input.agent_model || null,
       agent_runtime: input.agent_runtime,
       description: input.description ?? null,
+      owner_id: user.id,
       api_key_hash: apiKeyHash,
       api_key_prefix: prefix,
     })

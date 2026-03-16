@@ -31,6 +31,7 @@ interface CsvWorkItem {
   due_date: string | null
   start_date: string | null
   actual_start_date?: string | null
+  actual_resolved_date?: string | null
   actual_end_date?: string | null
   estimated_hours: number | null
   actual_hours: number | null
@@ -70,10 +71,10 @@ export function exportWorkItemsToCsv(
 
   const headers = external
     ? ['번호', '레벨', '제목', '설명', '상태', '트래커', '우선순위',
-       '담당자', '생성자', '목표 마감일', '목표 시작일', '실제 시작일', '실제 종료일', '예상공수', '실적공수',
+       '담당자', '생성자', '목표 마감일', '목표 시작일', '실제 시작일', '실제 완료일', '실제 종료일', '예상공수', '실적공수',
        '외부링크', '상위항목번호', '생성일', '수정일']
     : ['번호', '레벨', '제목', '설명', '상태', '트래커', '우선순위',
-       '공개수준', '담당자', '생성자', '목표 마감일', '목표 시작일', '실제 시작일', '실제 종료일', '예상공수', '실적공수',
+       '공개수준', '담당자', '생성자', '목표 마감일', '목표 시작일', '실제 시작일', '실제 완료일', '실제 종료일', '예상공수', '실적공수',
        '외부링크', '상위항목번호', '생성일', '수정일']
 
   const flat = flattenByHierarchy(items)
@@ -103,6 +104,7 @@ export function exportWorkItemsToCsv(
       formatDateForExport(item.due_date),
       formatDateForExport(item.start_date),
       formatDateForExport(item.actual_start_date ?? null),
+      formatDateForExport(item.actual_resolved_date ?? null),
       formatDateForExport(item.actual_end_date ?? null),
       item.estimated_hours != null ? String(item.estimated_hours) : '',
       item.actual_hours != null ? String(item.actual_hours) : '',

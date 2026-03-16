@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { format, addDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { redateWorkItemDateTime } from '@/lib/work-item-datetime'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { updateWorkItem } from '@/app/(dashboard)/projects/[key]/actions'
 import {
@@ -68,14 +69,36 @@ interface UnscheduledDragState {
   targetDate: Date | null // non-null when pointer is over the timeline grid
 }
 
-const ZOOM_ORDER: ZoomLevel[] = ['day', 'week', 'month', 'quarter']
+const ZOOM_ORDER: ZoomLevel[] = ['hour', 'day', 'week', 'month', 'quarter']
 const ZOOM_LABELS: Record<ZoomLevel, string> = {
+  hour: '1h',
   day: 'Day',
   week: 'Week',
   month: 'Month',
   quarter: 'Quarter',
   half: 'Half',
   year: 'Year',
+}
+
+function buildTimelineFallbackTime(targetDate: Date, zoomLevel: ZoomLevel, mode: 'start' | 'end') {
+  if (zoomLevel === 'hour') {
+    return {
+      hours: targetDate.getHours(),
+      minutes: targetDate.getMinutes(),
+      seconds: 0,
+    }
+  }
+
+  return mode === 'start'
+    ? { hours: 0, minutes: 0, seconds: 0 }
+    : { hours: 23, minutes: 59, seconds: 59 }
+}
+
+function formatDropPreview(targetDate: Date, zoomLevel: ZoomLevel) {
+  const start = redateWorkItemDateTime(null, targetDate, buildTimelineFallbackTime(targetDate, zoomLevel, 'start'))
+  const endSeed = addDays(targetDate, 7)
+  const end = redateWorkItemDateTime(null, endSeed, buildTimelineFallbackTime(endSeed, zoomLevel, 'end'))
+  return `${format(parseISO(start), 'M/d HH:mm:ss')}~${format(parseISO(end), 'M/d HH:mm:ss')}`
 }
 
 const HEADER_HEIGHT_BASE = 46 // px — month row + cell row
@@ -431,6 +454,7 @@ export default function TimelineView({
     zoomLevel,
     setZoomLevel,
     pxPerDay,
+    snapMs,
     dateToX,
     xToDate,
     dateRange,
@@ -883,8 +907,11 @@ export default function TimelineView({
       const { isOverGrid, targetDate } = getGridInfo(e.clientX, e.clientY)
       if (!isOverGrid || !targetDate) return
 
-      const startDateStr = format(targetDate, 'yyyy-MM-dd')
-      const dueDateStr = format(addDays(targetDate, 7), 'yyyy-MM-dd')
+      const sourceStart = dateMode === 'target' ? drag.item.start_date : (drag.item.actual_start_date ?? null)
+      const sourceEnd = dateMode === 'target' ? drag.item.due_date : (drag.item.actual_end_date ?? null)
+      const startDateStr = redateWorkItemDateTime(sourceStart, targetDate, buildTimelineFallbackTime(targetDate, zoomLevel, 'start'))
+      const dueTarget = addDays(targetDate, 7)
+      const dueDateStr = redateWorkItemDateTime(sourceEnd, dueTarget, buildTimelineFallbackTime(dueTarget, zoomLevel, 'end'))
 
       // Optimistic update — field depends on dateMode
       const updates = dateMode === 'target'
@@ -917,7 +944,7 @@ export default function TimelineView({
       window.removeEventListener('pointermove', handleMove)
       window.removeEventListener('pointerup', handleUp)
     }
-  }, [isDraggingUnscheduled, projectId, dateMode])
+  }, [isDraggingUnscheduled, projectId, dateMode, zoomLevel])
 
   // Empty states
   if (optimisticItems.filter((i) => !i.deleted_at).length === 0) {
@@ -957,7 +984,7 @@ export default function TimelineView({
 
         {/* Drag ghost for empty-state unscheduled section */}
         {unscheduledDrag && (
-          <UnscheduledGhost drag={unscheduledDrag} />
+          <UnscheduledGhost drag={unscheduledDrag} zoomLevel={zoomLevel} />
         )}
       </div>
     )
@@ -1113,6 +1140,7 @@ export default function TimelineView({
               dateToX={dateToX}
               xToDate={xToDate}
               pxPerDay={pxPerDay}
+              snapMs={snapMs}
               rowIndex={virtualRow.index}
               isSelected={selection.id === item.id}
               onClick={handleSelectItem}
@@ -1167,7 +1195,7 @@ export default function TimelineView({
             onClick={handleZoomIn}
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             title="Zoom In (+)"
-            disabled={zoomLevel === 'day'}
+            disabled={zoomLevel === ZOOM_ORDER[0]}
           >
             <ZoomIn className="h-4 w-4" />
           </button>
@@ -1175,7 +1203,7 @@ export default function TimelineView({
             onClick={handleZoomOut}
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             title="Zoom Out (-)"
-            disabled={zoomLevel === 'month'}
+            disabled={zoomLevel === ZOOM_ORDER[ZOOM_ORDER.length - 1]}
           >
             <ZoomOut className="h-4 w-4" />
           </button>
@@ -1318,7 +1346,7 @@ export default function TimelineView({
 
       {/* Unscheduled drag ghost — follows cursor across the entire page */}
       {unscheduledDrag && (
-        <UnscheduledGhost drag={unscheduledDrag} />
+        <UnscheduledGhost drag={unscheduledDrag} zoomLevel={zoomLevel} />
       )}
 
       {/* Detail dialog */}
@@ -1339,7 +1367,7 @@ export default function TimelineView({
 
 // ─── Ghost UI component ───────────────────────────────────────────────────────
 
-function UnscheduledGhost({ drag }: { drag: UnscheduledDragState }) {
+function UnscheduledGhost({ drag, zoomLevel }: { drag: UnscheduledDragState; zoomLevel: ZoomLevel }) {
   return (
     <div
       className="fixed z-50 pointer-events-none"
@@ -1356,7 +1384,7 @@ function UnscheduledGhost({ drag }: { drag: UnscheduledDragState }) {
         <span className="truncate">{drag.item.title}</span>
         {drag.targetDate && (
           <span className="shrink-0 opacity-80 text-[10px]">
-            {format(drag.targetDate, 'M/d')}~{format(addDays(drag.targetDate, 7), 'M/d')}
+            {formatDropPreview(drag.targetDate, zoomLevel)}
           </span>
         )}
       </div>

@@ -24,6 +24,7 @@ function makeWorkItem(overrides: Partial<WorkItemWithRelations> = {}): WorkItemW
     due_date: null,
     start_date: null,
     actual_start_date: null,
+    actual_resolved_date: null,
     actual_end_date: null,
     estimated_hours: null,
     actual_hours: null,

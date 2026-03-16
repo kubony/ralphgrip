@@ -5,6 +5,10 @@ import { parseISO, isBefore, startOfDay, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { WorkItemWithRelations } from '@/types/database'
 import { getAssigneeDisplay } from '@/lib/assignee-utils'
+import {
+  redateWorkItemDateTime,
+  shiftWorkItemDateTimeByMilliseconds,
+} from '@/lib/work-item-datetime'
 import { ROW_HEIGHT, BAR_HEIGHT } from '@/hooks/use-timeline-state'
 import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle'
 import Diamond from 'lucide-react/dist/esm/icons/diamond'
@@ -15,6 +19,7 @@ interface TimelineBarProps {
   dateToX: (date: Date) => number
   xToDate: (x: number) => Date
   pxPerDay: number
+  snapMs?: number
   rowIndex: number
   isSelected: boolean
   onClick: (id: string) => void
@@ -35,6 +40,7 @@ const PRIORITY_COLORS: Record<number, string> = {
 
 const FOLDER_BAR_HEIGHT = 4
 const AVATAR_SIZE = 16
+const DAY_MS = 24 * 60 * 60 * 1000
 
 function AssigneeAvatar({ assignee }: { assignee: { name: string | null; avatar: string | null; isAgent: boolean } }) {
   const initials = assignee.name?.charAt(0)?.toUpperCase() || '?'
@@ -79,6 +85,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
   dateToX,
   xToDate,
   pxPerDay,
+  snapMs = DAY_MS,
   rowIndex,
   isSelected,
   onClick,
@@ -114,14 +121,15 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
   const hasStart = !!activeStartDate
   const hasDue = !!activeEndDate
   const isFolder = item.tracker?.name === 'Folder'
+  const stepPx = Math.max((snapMs / DAY_MS) * pxPerDay, 1)
+  const minBarWidth = Math.max(stepPx, 10)
+  const isSubDayPrecision = snapMs < DAY_MS
 
   const today = startOfDay(new Date())
   const isOverdue =
     hasDue &&
     isBefore(parseISO(activeEndDate!), today) &&
-    item.status?.name !== 'Closed' &&
-    item.status?.name !== 'Resolved' &&
-    item.status?.name !== 'Confirmed'
+    !(item.status?.is_closed ?? false)
 
   const hasBothDates = hasStart && hasDue
 
@@ -132,21 +140,28 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
   // Calculate position using active date fields
   const left = hasStart ? dateToX(parseISO(activeStartDate!)) : 0
   const width = hasBothDates
-    ? Math.max(dateToX(parseISO(activeEndDate!)) - left + pxPerDay, pxPerDay)
+    ? Math.max(dateToX(parseISO(activeEndDate!)) - left, minBarWidth)
     : hasDue
       ? 0
       : hasStart
-        ? 3 * pxPerDay
+        ? Math.max(3 * stepPx, pxPerDay / 2)
         : 0
 
   // Zone B-2: diamond position (hoisted for use in drag handler)
-  const diamondX = !hasStart && hasDue ? dateToX(parseISO(activeEndDate!)) + pxPerDay / 2 : 0
+  const diamondX = !hasStart && hasDue ? dateToX(parseISO(activeEndDate!)) + stepPx / 2 : 0
 
   const barHeight = isFolder ? FOLDER_BAR_HEIGHT : BAR_HEIGHT
   const top = rowIndex * ROW_HEIGHT + (ROW_HEIGHT - barHeight) / 2
 
   const statusColor = item.status?.color || '#94a3b8'
   const priorityColor = PRIORITY_COLORS[item.priority || 0]
+  const timelineTitle = activeStartDate && activeEndDate
+    ? `${item.title}\n${format(parseISO(activeStartDate), 'M/d HH:mm:ss')} → ${format(parseISO(activeEndDate), 'M/d HH:mm:ss')}`
+    : activeStartDate
+      ? `${item.title}\n시작: ${format(parseISO(activeStartDate), 'M/d HH:mm:ss')}`
+      : activeEndDate
+        ? `${item.title}\n마감: ${format(parseISO(activeEndDate), 'M/d HH:mm:ss')}`
+        : item.title
 
   // Compute tooltip text from drag state — uses dragRef for resize positions
   const computeTooltipText = useCallback(
@@ -155,32 +170,35 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
       const startWidth = dragRef.current?.startWidth ?? 0
 
       if (type === 'move') {
-        const deltaDays = Math.round(deltaX / pxPerDay)
+        const deltaSteps = Math.round(deltaX / stepPx)
+        const deltaMs = deltaSteps * snapMs
         if (originalStart && originalDue) {
-          const s = parseISO(originalStart)
-          const d = parseISO(originalDue)
-          s.setDate(s.getDate() + deltaDays)
-          d.setDate(d.getDate() + deltaDays)
-          return `${format(s, 'M/d')} → ${format(d, 'M/d')}`
+          const s = shiftWorkItemDateTimeByMilliseconds(originalStart, deltaMs)
+          const d = shiftWorkItemDateTimeByMilliseconds(originalDue, deltaMs)
+          if (s && d) return `${format(parseISO(s), 'M/d HH:mm:ss')} → ${format(parseISO(d), 'M/d HH:mm:ss')}`
         } else if (originalStart) {
-          const s = parseISO(originalStart)
-          s.setDate(s.getDate() + deltaDays)
-          return `시작: ${format(s, 'M/d')}`
+          const s = shiftWorkItemDateTimeByMilliseconds(originalStart, deltaMs)
+          if (s) return `시작: ${format(parseISO(s), 'M/d HH:mm:ss')}`
         } else if (originalDue) {
-          const d = parseISO(originalDue)
-          d.setDate(d.getDate() + deltaDays)
-          return `마감: ${format(d, 'M/d')}`
+          const d = shiftWorkItemDateTimeByMilliseconds(originalDue, deltaMs)
+          if (d) return `마감: ${format(parseISO(d), 'M/d HH:mm:ss')}`
         }
       } else if (type === 'resize-start') {
         const newDate = xToDate(startLeft + deltaX)
-        return `시작: ${format(newDate, 'M/d')}`
+        const next = isSubDayPrecision
+          ? format(newDate, "yyyy-MM-dd'T'HH:mm:ss")
+          : redateWorkItemDateTime(originalStart, newDate)
+        return `시작: ${format(parseISO(next), 'M/d HH:mm:ss')}`
       } else {
-        const newDate = xToDate(startLeft + startWidth + deltaX - pxPerDay)
-        return `마감: ${format(newDate, 'M/d')}`
+        const newDate = xToDate(startLeft + startWidth + deltaX)
+        const next = isSubDayPrecision
+          ? format(newDate, "yyyy-MM-dd'T'HH:mm:ss")
+          : redateWorkItemDateTime(originalDue, newDate, { hours: 23, minutes: 59, seconds: 59 })
+        return `마감: ${format(parseISO(next), 'M/d HH:mm:ss')}`
       }
       return ''
     },
-    [pxPerDay, xToDate]
+    [isSubDayPrecision, snapMs, stepPx, xToDate]
   )
 
   // Compute tentative dates from drag delta — shared by handlePointerMove and handlePointerUp
@@ -193,30 +211,27 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
       let newEnd = originalDue
 
       if (type === 'move') {
-        const deltaDays = Math.round(deltaX / pxPerDay)
-        if (deltaDays !== 0) {
-          if (originalStart) {
-            const s = parseISO(originalStart)
-            s.setDate(s.getDate() + deltaDays)
-            newStart = format(s, 'yyyy-MM-dd')
-          }
-          if (originalDue) {
-            const d = parseISO(originalDue)
-            d.setDate(d.getDate() + deltaDays)
-            newEnd = format(d, 'yyyy-MM-dd')
-          }
+        const deltaSteps = Math.round(deltaX / stepPx)
+        const deltaMs = deltaSteps * snapMs
+        if (deltaMs !== 0) {
+          if (originalStart) newStart = shiftWorkItemDateTimeByMilliseconds(originalStart, deltaMs)
+          if (originalDue) newEnd = shiftWorkItemDateTimeByMilliseconds(originalDue, deltaMs)
         }
       } else if (type === 'resize-start') {
         const newDate = xToDate(startLeft + deltaX)
-        newStart = format(newDate, 'yyyy-MM-dd')
+        newStart = isSubDayPrecision
+          ? format(newDate, "yyyy-MM-dd'T'HH:mm:ss")
+          : redateWorkItemDateTime(originalStart, newDate)
       } else if (type === 'resize-end') {
-        const newDate = xToDate(startLeft + startWidth + deltaX - pxPerDay)
-        newEnd = format(newDate, 'yyyy-MM-dd')
+        const newDate = xToDate(startLeft + startWidth + deltaX)
+        newEnd = isSubDayPrecision
+          ? format(newDate, "yyyy-MM-dd'T'HH:mm:ss")
+          : redateWorkItemDateTime(originalDue, newDate, { hours: 23, minutes: 59, seconds: 59 })
       }
 
       return { start: newStart, end: newEnd }
     },
-    [pxPerDay, xToDate]
+    [isSubDayPrecision, snapMs, stepPx, xToDate]
   )
 
   // Clamp folder dates so they can't shrink below children range
@@ -305,13 +320,13 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
       } else if (type === 'resize-start') {
         const newLeft = startLeft + deltaX
         const newWidth = startWidth - deltaX
-        if (newWidth >= pxPerDay) {
+        if (newWidth >= minBarWidth) {
           barRef.current.style.left = `${newLeft}px`
           barRef.current.style.width = `${newWidth}px`
         }
       } else if (type === 'resize-end') {
         const newWidth = startWidth + deltaX
-        if (newWidth >= pxPerDay) {
+        if (newWidth >= minBarWidth) {
           barRef.current.style.width = `${newWidth}px`
         }
       }
@@ -333,7 +348,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
       e.preventDefault()
       e.stopPropagation()
     },
-    [pxPerDay, computeTooltipText, onDragMove, computeTentativeDates, clampFolderDates, item.id]
+    [computeTooltipText, onDragMove, computeTentativeDates, clampFolderDates, item.id, minBarWidth]
   )
 
   const handlePointerUp = useCallback(
@@ -347,31 +362,28 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
       let newDue = originalDue
 
       if (type === 'move') {
-        const deltaDays = Math.round(deltaX / pxPerDay)
-        if (deltaDays !== 0) {
+        const deltaSteps = Math.round(deltaX / stepPx)
+        const deltaMs = deltaSteps * snapMs
+        if (deltaMs !== 0) {
           if (originalStart && originalDue) {
-            const startDate = parseISO(originalStart)
-            const dueDate = parseISO(originalDue)
-            startDate.setDate(startDate.getDate() + deltaDays)
-            dueDate.setDate(dueDate.getDate() + deltaDays)
-            newStart = format(startDate, 'yyyy-MM-dd')
-            newDue = format(dueDate, 'yyyy-MM-dd')
+            newStart = shiftWorkItemDateTimeByMilliseconds(originalStart, deltaMs)
+            newDue = shiftWorkItemDateTimeByMilliseconds(originalDue, deltaMs)
           } else if (originalStart && !originalDue) {
-            const startDate = parseISO(originalStart)
-            startDate.setDate(startDate.getDate() + deltaDays)
-            newStart = format(startDate, 'yyyy-MM-dd')
+            newStart = shiftWorkItemDateTimeByMilliseconds(originalStart, deltaMs)
           } else if (!originalStart && originalDue) {
-            const dueDate = parseISO(originalDue)
-            dueDate.setDate(dueDate.getDate() + deltaDays)
-            newDue = format(dueDate, 'yyyy-MM-dd')
+            newDue = shiftWorkItemDateTimeByMilliseconds(originalDue, deltaMs)
           }
         }
       } else if (type === 'resize-start') {
         const newDate = xToDate(startLeft + deltaX)
-        newStart = format(newDate, 'yyyy-MM-dd')
+        newStart = isSubDayPrecision
+          ? format(newDate, "yyyy-MM-dd'T'HH:mm:ss")
+          : redateWorkItemDateTime(originalStart, newDate)
       } else if (type === 'resize-end') {
-        const newDate = xToDate(startLeft + startWidth + deltaX - pxPerDay)
-        newDue = format(newDate, 'yyyy-MM-dd')
+        const newDate = xToDate(startLeft + startWidth + deltaX)
+        newDue = isSubDayPrecision
+          ? format(newDate, "yyyy-MM-dd'T'HH:mm:ss")
+          : redateWorkItemDateTime(originalDue, newDate, { hours: 23, minutes: 59, seconds: 59 })
       }
 
       // Apply folder clamping on final values
@@ -397,7 +409,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
       e.preventDefault()
       e.stopPropagation()
     },
-    [pxPerDay, xToDate, onDragEnd, item.id, onClick, dateMode, clampFolderDates]
+    [clampFolderDates, dateMode, isSubDayPrecision, item.id, onClick, onDragEnd, snapMs, stepPx, xToDate]
   )
 
   const handleMouseMove = useCallback(
@@ -440,6 +452,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
           ref={barRef}
           data-bar-id={item.id}
           className="absolute flex items-center justify-center cursor-grab select-none"
+          title={timelineTitle}
           style={{
             left: diamondX - 6,
             top: rowIndex * ROW_HEIGHT + (ROW_HEIGHT - 12) / 2,
@@ -487,9 +500,10 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
             getCursor(),
             isSelected && 'ring-2 ring-blue-500'
           )}
+          title={timelineTitle}
           style={{
             left,
-            width: 3 * pxPerDay,
+            width,
             top,
             height: barHeight,
             backgroundColor: `${statusColor}4D`, // 30% opacity
@@ -533,13 +547,13 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
   const refLeft = hasRefStart
     ? dateToX(parseISO(refStartDate!))
     : hasRefEnd
-      ? dateToX(parseISO(refEndDate!)) - pxPerDay
+      ? dateToX(parseISO(refEndDate!)) - stepPx
       : 0
 
   const refWidth =
     hasRefStart && hasRefEnd
-      ? Math.max(dateToX(parseISO(refEndDate!)) - refLeft + pxPerDay, pxPerDay)
-      : pxPerDay
+      ? Math.max(dateToX(parseISO(refEndDate!)) - refLeft, minBarWidth)
+      : minBarWidth
 
   // Zone A: Both dates (normal bar or folder summary)
   if (hasBothDates) {
@@ -557,6 +571,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
             getCursor(),
             isSelected && 'ring-2 ring-blue-500'
           )}
+            title={timelineTitle}
             style={{
               left,
               width,
@@ -636,6 +651,7 @@ const TimelineBar = React.memo<TimelineBarProps>(function TimelineBar({
             isInvalidRange && 'border-2 border-dashed border-red-500',
             !isInvalidRange && isOverdue && 'border-2 border-red-500'
           )}
+          title={timelineTitle}
           style={{
             left,
             width,

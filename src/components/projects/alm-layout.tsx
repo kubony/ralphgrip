@@ -49,6 +49,7 @@ import type {
 
 } from '@/types/database'
 import { CreateWorkItemDialog } from './create-work-item-dialog'
+import { RunClaudeCodeButton } from './run-claude-code-button'
 
 // Re-export types for backwards compatibility
 export type { Selection, SelectionType } from '@/hooks/use-alm-selection'
@@ -553,13 +554,20 @@ export function ALMLayout({
         </div>
         </div>
 
-        {/* 오른쪽: 작업 추가 버튼 */}
-        <CreateWorkItemDialog
-          projectId={projectId}
-          trackers={trackers}
-          statuses={statuses}
-          members={members}
-        />
+        {/* 오른쪽: Claude Code + 작업 추가 버튼 */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <RunClaudeCodeButton
+            projectKey={projectKey}
+            projectId={projectId}
+            workItems={liveWorkItems}
+          />
+          <CreateWorkItemDialog
+            projectId={projectId}
+            trackers={trackers}
+            statuses={statuses}
+            members={members}
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden relative">

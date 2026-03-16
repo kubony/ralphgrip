@@ -107,7 +107,7 @@ export function CreateProjectDialog() {
                   <div>
                     <div className="text-sm font-medium">이슈</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Open / In Progress / Resolved / Closed
+                      Open / Todo / In Progress / Issue / Resolved / Closed
                     </div>
                   </div>
                 </button>

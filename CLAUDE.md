@@ -35,7 +35,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **이슈 프로젝트** (`issue`):
 - 트래커: `Folder` + `Issue`
-- 상태: Open(#94a3b8) → In Progress(#3b82f6) → On Hold(#f59e0b) → Resolved(#22c55e) → Closed(#64748b)
+- 상태: Open(#94a3b8) → Todo(#64748b) → In Progress(#3b82f6) → Issue(#f59e0b) → Resolved(#22c55e) → Closed(#475569)
+
+**이슈 프로젝트 상태 의미**:
+- `Open`: 오케스트레이터가 계획 단계에서 생성한 상태
+- `Todo`: 에이전트가 할당된 상태
+- `In Progress`: 에이전트가 실제 작업을 시작한 상태
+- `Issue`: 진행 중 문제/블로커가 발생한 상태
+- `Resolved`: 에이전트가 작업 완료로 판단한 상태
+- `Closed`: 오케스트레이터가 점검 후 최종 완료한 상태
+
+**AgentGrip / RalphGrip E2E 원칙**:
+- AgentGrip(RalphGrip)은 프로젝트 생성부터 최종 산출물 완료까지 전체 실행 흐름을 다룬다.
+- 대표 시나리오는 영상 제작 프로젝트를 만들고, AI 에이전트를 스폰/할당해 실제 작업을 수행시켜 최종 영상을 완성하는 것이다.
+- 즉, 단순 관리 툴이 아니라 오케스트레이터와 에이전트가 실제로 일하는 실행형 시스템을 지향한다.
 
 **핵심 원칙**:
 - 프로젝트 타입은 생성 후 변경 불가

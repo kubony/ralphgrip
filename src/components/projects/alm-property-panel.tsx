@@ -24,11 +24,14 @@ import { updateWorkItem, batchUpdateStatus, batchDelete, batchUpdateField } from
 import { CommentsSection } from './comments-section'
 import { DependencySection } from './dependency-section'
 import { AnimatedAccordion } from '@/components/ui/animated-accordion'
+import { DateTimeDisplayToggle } from '@/components/ui/datetime-display-toggle'
 import { cn } from '@/lib/utils'
 import type { WorkItemWithRelations, StatusRef, TrackerRef, PersonRef, AgentRef, AiMetadata, WorkItemExternalLink } from '@/types/database'
 import { getAssigneeDisplay, getReporterDisplay } from '@/lib/assignee-utils'
 import { detectLinkDomain } from '@/lib/external-link-utils'
 import { scrollMaskBoth } from '@/lib/motion'
+import { useDateTimeDisplay } from '@/hooks/use-datetime-display'
+import { formatWorkItemDateTime, normalizeWorkItemDateTimeForStorage, toDateTimeLocalInputValue } from '@/lib/work-item-datetime'
 import { LinkDomainIcon } from './link-domain-icon'
 import Calendar from 'lucide-react/dist/esm/icons/calendar'
 import User from 'lucide-react/dist/esm/icons/user'
@@ -99,6 +102,7 @@ export function ALMPropertyPanel({
   currentUserId,
   onViewInGraph,
 }: ALMPropertyPanelProps) {
+  const { showSeconds, toggleShowSeconds } = useDateTimeDisplay()
   const workItemWithExtras = workItem as WorkItemWithPropertyExtras | null | undefined
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -118,10 +122,10 @@ export function ALMPropertyPanel({
       setLocalEstimatedHours(workItem?.estimated_hours?.toString() ?? '')
       setLocalActualHours(workItem?.actual_hours?.toString() ?? '')
       setLocalExternalLinks(workItemWithExtras?.external_links ?? [])
-      setLocalStartDate(workItem?.start_date ?? '')
-      setLocalDueDate(workItem?.due_date ?? '')
-      setLocalActualStartDate(workItemWithExtras?.actual_start_date ?? '')
-      setLocalActualEndDate(workItemWithExtras?.actual_end_date ?? '')
+      setLocalStartDate(toDateTimeLocalInputValue(workItem?.start_date))
+      setLocalDueDate(toDateTimeLocalInputValue(workItem?.due_date))
+      setLocalActualStartDate(toDateTimeLocalInputValue(workItemWithExtras?.actual_start_date))
+      setLocalActualEndDate(toDateTimeLocalInputValue(workItemWithExtras?.actual_end_date))
     })
   }, [
     workItem?.id,
@@ -139,10 +143,10 @@ export function ALMPropertyPanel({
     if (!workItem) return
      
     queueMicrotask(() => {
-      setLocalStartDate(workItem.start_date ?? '')
-      setLocalDueDate(workItem.due_date ?? '')
-      setLocalActualStartDate(workItemWithExtras?.actual_start_date ?? '')
-      setLocalActualEndDate(workItemWithExtras?.actual_end_date ?? '')
+      setLocalStartDate(toDateTimeLocalInputValue(workItem.start_date))
+      setLocalDueDate(toDateTimeLocalInputValue(workItem.due_date))
+      setLocalActualStartDate(toDateTimeLocalInputValue(workItemWithExtras?.actual_start_date))
+      setLocalActualEndDate(toDateTimeLocalInputValue(workItemWithExtras?.actual_end_date))
     })
   }, [workItem, workItem?.start_date, workItem?.due_date, workItemWithExtras?.actual_start_date, workItemWithExtras?.actual_end_date])
 
@@ -441,10 +445,13 @@ export function ALMPropertyPanel({
           </PropertyField>
 
           {/* 메타 정보 */}
+          <div className="flex justify-end pb-1">
+            <DateTimeDisplayToggle showSeconds={showSeconds} onToggle={toggleShowSeconds} />
+          </div>
           <div className="text-xs text-muted-foreground pt-1">
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3" />
-              <span>생성: {new Date(workItem.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span>생성: {formatWorkItemDateTime(workItem.created_at, 'ko-KR', { showSeconds })}</span>
             </div>
           </div>
         </div>
@@ -457,26 +464,28 @@ export function ALMPropertyPanel({
           <div>
             <p className="text-xs text-muted-foreground mb-1.5">계획 일정</p>
             <div className="space-y-1">
-              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="목표 시작일">
+              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="목표 시작일시">
                 <DateInputField
                   value={localStartDate}
                   onChange={(e) => setLocalStartDate(e.target.value)}
                   onBlur={() => {
-                    const val = localStartDate || null
-                    if (val !== (workItem.start_date ?? null)) {
+                    const val = normalizeWorkItemDateTimeForStorage(localStartDate)
+                    setLocalStartDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(workItem.start_date)) {
                       handleFieldChange('start_date', val)
                     }
                   }}
                   disabled={isSaving}
                 />
               </PropertyField>
-              <PropertyField icon={<Calendar className="h-4 w-4" />} label="목표 마감일">
+              <PropertyField icon={<Calendar className="h-4 w-4" />} label="목표 마감일시">
                 <DateInputField
                   value={localDueDate}
                   onChange={(e) => setLocalDueDate(e.target.value)}
                   onBlur={() => {
-                    const val = localDueDate || null
-                    if (val !== (workItem.due_date ?? null)) {
+                    const val = normalizeWorkItemDateTimeForStorage(localDueDate)
+                    setLocalDueDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(workItem.due_date)) {
                       handleFieldChange('due_date', val)
                     }
                   }}
@@ -490,26 +499,28 @@ export function ALMPropertyPanel({
           <div>
             <p className="text-xs text-muted-foreground mb-1.5">실적 일정</p>
             <div className="space-y-1">
-              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="시작일">
+              <PropertyField icon={<CalendarClock className="h-4 w-4" />} label="시작일시">
                 <DateInputField
                   value={localActualStartDate}
                   onChange={(e) => setLocalActualStartDate(e.target.value)}
                   onBlur={() => {
-                    const val = localActualStartDate || null
-                    if (val !== (workItemWithExtras?.actual_start_date ?? null)) {
+                    const val = normalizeWorkItemDateTimeForStorage(localActualStartDate)
+                    setLocalActualStartDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(workItemWithExtras?.actual_start_date)) {
                       handleFieldChange('actual_start_date', val)
                     }
                   }}
                   disabled={isSaving}
                 />
               </PropertyField>
-              <PropertyField icon={<Calendar className="h-4 w-4" />} label="종료일">
+              <PropertyField icon={<Calendar className="h-4 w-4" />} label="종료일시">
                 <DateInputField
                   value={localActualEndDate}
                   onChange={(e) => setLocalActualEndDate(e.target.value)}
                   onBlur={() => {
-                    const val = localActualEndDate || null
-                    if (val !== (workItemWithExtras?.actual_end_date ?? null)) {
+                    const val = normalizeWorkItemDateTimeForStorage(localActualEndDate)
+                    setLocalActualEndDate(toDateTimeLocalInputValue(val))
+                    if (val !== normalizeWorkItemDateTimeForStorage(workItemWithExtras?.actual_end_date)) {
                       handleFieldChange('actual_end_date', val)
                     }
                   }}
@@ -1167,8 +1178,7 @@ function ProjectSummaryPanel({
           </div>
           <div className="space-y-1.5">
             {recentItems.map((item) => {
-              const date = new Date(item.updated_at || item.created_at)
-              const formatted = `${date.getMonth() + 1}월 ${date.getDate()}일 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+              const formatted = formatWorkItemDateTime(item.updated_at || item.created_at, 'ko-KR', { showSeconds })
               return (
                 <div key={item.id} className="text-sm">
                   <p className="truncate">{item.title}</p>
@@ -1208,7 +1218,8 @@ function DateInputField({
   return (
     <Input
       ref={inputRef}
-      type="date"
+      type="datetime-local"
+      step="1"
       className="h-8"
       value={value}
       onChange={onChange}

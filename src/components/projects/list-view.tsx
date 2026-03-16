@@ -30,6 +30,9 @@ import {
 } from '@/components/ui/context-menu'
 import Bot from 'lucide-react/dist/esm/icons/bot'
 import { getAssigneeDisplay } from '@/lib/assignee-utils'
+import { formatWorkItemDateTime } from '@/lib/work-item-datetime'
+import { useDateTimeDisplay } from '@/hooks/use-datetime-display'
+import { DateTimeDisplayToggle } from '@/components/ui/datetime-display-toggle'
 import type {
   WorkItemWithRelations,
   StatusRef,
@@ -100,9 +103,8 @@ function getInitials(name: string | null | undefined): string {
     .slice(0, 2)
 }
 
-function formatDate(date: string | null): string {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+function formatDate(date: string | null, showSeconds: boolean): string {
+  return formatWorkItemDateTime(date, 'ko-KR', { showSeconds })
 }
 
 function isOverdue(dateStr: string | null, isClosed: boolean): boolean {
@@ -130,8 +132,8 @@ const columns: ColumnDef[] = [
   { key: 'status', label: '상태', sortable: true, className: 'w-[120px]' },
   { key: 'priority', label: '우선순위', sortable: true, className: 'w-[100px]' },
   { key: 'assignee', label: '담당자', sortable: false, className: 'w-[120px]' },
-  { key: 'due_date', label: '마감일', sortable: true, className: 'w-[100px]' },
-  { key: 'updated_at', label: '수정일', sortable: true, className: 'w-[100px]' },
+  { key: 'due_date', label: '마감일', sortable: true, className: 'w-[180px]' },
+  { key: 'updated_at', label: '수정일', sortable: true, className: 'w-[180px]' },
 ]
 
 export default function ListView({
@@ -142,6 +144,7 @@ export default function ListView({
   onSelectItem,
   selectedItemId,
 }: ListViewProps) {
+  const { showSeconds, toggleShowSeconds } = useDateTimeDisplay()
   const [sortState, setSortState] = useState<SortState>({
     field: 'number',
     direction: 'asc',
@@ -266,6 +269,9 @@ export default function ListView({
 
   return (
     <div className="h-full overflow-auto p-4">
+      <div className="mb-3 flex justify-end">
+        <DateTimeDisplayToggle showSeconds={showSeconds} onToggle={toggleShowSeconds} />
+      </div>
       <div className="border rounded-lg overflow-hidden">
         {/* Header */}
         <div className="flex items-center bg-muted/50 border-b text-xs font-medium text-muted-foreground">
@@ -311,7 +317,7 @@ export default function ListView({
                     )}
                   >
                     {/* 번호 */}
-                    <div className="w-[100px] px-3 py-2.5">
+                    <div className="w-[180px] px-3 py-2.5">
                       <div className="flex items-center gap-1.5">
                         <TrackerIcon tracker={item.tracker} status={item.status} />
                         {showTrackerId && (
@@ -397,20 +403,20 @@ export default function ListView({
                     </div>
 
                     {/* 마감일 */}
-                    <div className="w-[100px] px-3 py-2.5">
+                    <div className="w-[180px] px-3 py-2.5">
                       <span className={cn(
                         'text-xs',
                         isOverdue(item.due_date, item.status?.is_closed ?? false)
                           ? 'text-red-500 font-medium'
                           : 'text-muted-foreground'
                       )}>
-                        {formatDate(item.due_date)}
+                        {formatDate(item.due_date, showSeconds)}
                       </span>
                     </div>
 
                     {/* 수정일 */}
-                    <div className="w-[100px] px-3 py-2.5 text-xs text-muted-foreground">
-                      {formatDate(item.updated_at)}
+                    <div className="w-[180px] px-3 py-2.5 text-xs text-muted-foreground">
+                      {formatDate(item.updated_at, showSeconds)}
                     </div>
 
                     {/* ⋮ 메뉴 */}
