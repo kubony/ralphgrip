@@ -1,7 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import type { WorkflowLoader as WorkflowLoaderType } from './workflow-loader.js'
+import type { SelfTrackerClient, Issue } from './tracker/self-client.js'
+import type { WorkspaceManager as WorkspaceManagerType } from './workspace/manager.js'
 
 // Mock logger
 vi.mock('./logger.js', () => ({
@@ -22,35 +25,49 @@ import { WorkflowLoader } from './workflow-loader.js'
 import { Orchestrator } from './orchestrator.js'
 import { WorkspaceManager } from './workspace/manager.js'
 
-function createMockTracker() {
+type MockTracker = {
+  fetchActiveIssues: ReturnType<typeof vi.fn<() => Promise<Issue[]>>>
+  fetchIssueStates: ReturnType<typeof vi.fn<(ids: string[]) => Promise<Map<string, string>>>>
+  updateIssueStatus: ReturnType<typeof vi.fn<(id: string, statusName: string) => Promise<void>>>
+  addComment: ReturnType<typeof vi.fn<(issueId: string, content: string) => Promise<void>>>
+  isTerminalState: ReturnType<typeof vi.fn<(state: string) => boolean>>
+  isActiveState: ReturnType<typeof vi.fn<(state: string) => boolean>>
+}
+
+type MockWorkspaceManager = {
+  ensure: ReturnType<typeof vi.fn<(id: string) => Promise<{ path: string; created: boolean }>>>
+  prepareForRun: ReturnType<typeof vi.fn<(id: string) => Promise<string>>>
+  cleanupAfterRun: ReturnType<typeof vi.fn<(id: string) => Promise<void>>>
+  resolve: ReturnType<typeof vi.fn<(id: string) => string>>
+  remove: ReturnType<typeof vi.fn<(id: string) => Promise<void>>>
+  sanitizeKey: ReturnType<typeof vi.fn<(id: string) => string>>
+}
+
+function createMockTracker(): MockTracker {
   return {
-    fetchActiveIssues: vi.fn(async () => []),
-    fetchIssueStates: vi.fn(async () => new Map<string, string>()),
-    updateIssueStatus: vi.fn(async () => {}),
-    addComment: vi.fn(async () => {}),
-    isTerminalState: vi.fn(() => false),
-    isActiveState: vi.fn(() => true),
+    fetchActiveIssues: vi.fn<() => Promise<Issue[]>>(async () => []),
+    fetchIssueStates: vi.fn<(ids: string[]) => Promise<Map<string, string>>>(async () => new Map<string, string>()),
+    updateIssueStatus: vi.fn<(id: string, statusName: string) => Promise<void>>(async () => {}),
+    addComment: vi.fn<(issueId: string, content: string) => Promise<void>>(async () => {}),
+    isTerminalState: vi.fn<(state: string) => boolean>(() => false),
+    isActiveState: vi.fn<(state: string) => boolean>(() => true),
   }
 }
 
-function createMockWorkspaceManager() {
+function createMockWorkspaceManager(): MockWorkspaceManager {
   return {
-    ensure: vi.fn(async (id: string) => ({ path: `/tmp/ws/${id}`, created: false })),
-    prepareForRun: vi.fn(async (id: string) => `/tmp/ws/${id}`),
-    cleanupAfterRun: vi.fn(async () => {}),
-    resolve: vi.fn((id: string) => `/tmp/ws/${id}`),
-    remove: vi.fn(async () => {}),
-    sanitizeKey: vi.fn((id: string) => id.replace(/[^A-Za-z0-9._-]/g, '_')),
+    ensure: vi.fn<(id: string) => Promise<{ path: string; created: boolean }>>(async (id) => ({ path: `/tmp/ws/${id}`, created: false })),
+    prepareForRun: vi.fn<(id: string) => Promise<string>>(async (id) => `/tmp/ws/${id}`),
+    cleanupAfterRun: vi.fn<(id: string) => Promise<void>>(async () => {}),
+    resolve: vi.fn<(id: string) => string>((id) => `/tmp/ws/${id}`),
+    remove: vi.fn<(id: string) => Promise<void>>(async () => {}),
+    sanitizeKey: vi.fn<(id: string) => string>((id) => id.replace(/[^A-Za-z0-9._-]/g, '_')),
   }
 }
 
-function makeTempWorkflow(config: Record<string, unknown>, template: string): string {
+function makeTempWorkflow(template: string): string {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orch-integ-'))
   const filePath = path.join(tmpDir, 'WORKFLOW.md')
-  const yaml = Object.entries(config)
-    .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
-    .join('\n')
-  // Use a proper YAML format
   const content = `---
 tracker:
   kind: self
@@ -91,16 +108,16 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
 
   describe('WorkflowLoader → Orchestrator config 전달', () => {
     it('loader.getConfig() 결과가 Orchestrator 내부에서 올바르게 사용됨', () => {
-      const filePath = makeTempWorkflow({}, 'Work on {{ issue.identifier }}: {{ issue.title }}')
+      const filePath = makeTempWorkflow('Work on {{ issue.identifier }}: {{ issue.title }}')
       tmpPaths.push(filePath)
       const loader = new WorkflowLoader(filePath)
       const config = loader.getConfig()
 
       const mockTracker = createMockTracker()
       const orchestrator = new Orchestrator(
-        loader as any,
-        mockTracker as any,
-        createMockWorkspaceManager() as any,
+        loader as WorkflowLoaderType,
+        mockTracker as unknown as SelfTrackerClient,
+        createMockWorkspaceManager() as unknown as WorkspaceManagerType,
       )
 
       // Orchestrator uses config via loader.getConfig()
@@ -116,7 +133,7 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
 
   describe('WorkflowLoader → WorkspaceManager hooks 전달', () => {
     it('workspace.root의 ~ 확장 + hooks 객체 전달', () => {
-      const filePath = makeTempWorkflow({}, 'prompt')
+      const filePath = makeTempWorkflow('prompt')
       tmpPaths.push(filePath)
       const loader = new WorkflowLoader(filePath)
       const config = loader.getConfig()
@@ -135,7 +152,7 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
 
   describe('Tracker → Orchestrator.poll() 필터링', () => {
     it('활성 이슈 목록 → running/claimed/completed 제외 → dispatch 후보 결정', async () => {
-      const filePath = makeTempWorkflow({}, 'prompt')
+      const filePath = makeTempWorkflow('prompt')
       tmpPaths.push(filePath)
       const loader = new WorkflowLoader(filePath)
       const mockTracker = createMockTracker()
@@ -155,9 +172,9 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
       mockTracker.fetchActiveIssues.mockResolvedValue(issues)
 
       const orchestrator = new Orchestrator(
-        loader as any,
-        mockTracker as any,
-        createMockWorkspaceManager() as any,
+        loader as WorkflowLoaderType,
+        mockTracker as unknown as SelfTrackerClient,
+        createMockWorkspaceManager() as unknown as WorkspaceManagerType,
       )
 
       await orchestrator.poll()
@@ -169,7 +186,7 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
 
   describe('Orchestrator.reconcile() 터미널 상태 abort', () => {
     it('실행 중 이슈가 Resolved로 변경되면 reconcile에서 감지', async () => {
-      const filePath = makeTempWorkflow({}, 'prompt')
+      const filePath = makeTempWorkflow('prompt')
       tmpPaths.push(filePath)
       const loader = new WorkflowLoader(filePath)
       const mockTracker = createMockTracker()
@@ -181,9 +198,9 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
       )
 
       const orchestrator = new Orchestrator(
-        loader as any,
-        mockTracker as any,
-        createMockWorkspaceManager() as any,
+        loader as WorkflowLoaderType,
+        mockTracker as unknown as SelfTrackerClient,
+        createMockWorkspaceManager() as unknown as WorkspaceManagerType,
       )
 
       // reconcile is called inside poll(); when no running entries, it's a no-op
@@ -195,7 +212,7 @@ describe('Orchestrator — 모듈 간 결합 테스트', () => {
 
   describe('Orchestrator.scheduleRetry() 백오프', () => {
     it('실패 시 지수 백오프 계산 + max_retry_backoff_ms 캡핑', () => {
-      const filePath = makeTempWorkflow({}, 'prompt')
+      const filePath = makeTempWorkflow('prompt')
       tmpPaths.push(filePath)
       const loader = new WorkflowLoader(filePath)
       const config = loader.getConfig()

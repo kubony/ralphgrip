@@ -8,7 +8,7 @@ import { AgentDetailDialog } from './agent-detail-dialog'
 import { Button } from '@/components/ui/button'
 import Plus from 'lucide-react/dist/esm/icons/plus'
 import Bot from 'lucide-react/dist/esm/icons/bot'
-import type { AgentStatus, AgentCategory } from '@/types/database'
+import type { AgentStatus } from '@/types/database'
 
 interface AgentRow {
   id: string
@@ -136,6 +136,7 @@ export function AgentsPageContent({ initialAgents }: AgentsPageContentProps) {
 
       {selectedAgent && (
         <AgentDetailDialog
+          key={`${selectedAgent.id}:${detailOpen ? 'open' : 'closed'}`}
           open={detailOpen}
           onOpenChange={setDetailOpen}
           agent={selectedAgent}

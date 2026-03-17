@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { WorkspaceManager } from './manager.js'
 
+type ExecCallback = (error: Error | null, stdout: string, stderr: string) => void
+
 vi.mock('node:child_process', () => ({
-  exec: vi.fn((_cmd: string, _opts: unknown, cb: Function) => cb(null, '', '')),
+  exec: vi.fn((_cmd: string, _opts: unknown, cb: ExecCallback) => cb(null, '', '')),
 }))
 
 // Suppress log output

@@ -4,6 +4,24 @@ import path from 'node:path'
 
 let proc: ChildProcess | null = null
 
+interface JsonRpcResponse<T = unknown> {
+  jsonrpc: '2.0'
+  id: number | string
+  result?: T
+}
+
+interface InitializeResult {
+  serverInfo?: { name?: string }
+}
+
+interface ToolDescriptor {
+  name: string
+}
+
+interface ToolsListResult {
+  tools?: ToolDescriptor[]
+}
+
 afterEach(() => {
   if (proc && !proc.killed) {
     proc.kill('SIGTERM')
@@ -29,7 +47,7 @@ function sendJsonRpc(
 function waitForResponse(
   child: ChildProcess,
   timeoutMs = 10_000
-): Promise<Record<string, unknown>> {
+): Promise<JsonRpcResponse> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Response timeout')), timeoutMs)
     let buffer = ''
@@ -76,10 +94,6 @@ describe('MCP Server — stdio E2E', () => {
       },
     })
 
-    // Collect stderr for debugging
-    let stderr = ''
-    proc.stderr?.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
-
     // 1. Send initialize
     sendJsonRpc(proc, 'initialize', {
       protocolVersion: '2024-11-05',
@@ -89,7 +103,7 @@ describe('MCP Server — stdio E2E', () => {
 
     const initResponse = await waitForResponse(proc)
     expect(initResponse.result).toBeDefined()
-    expect((initResponse.result as any).serverInfo?.name).toBe('ralphgrip')
+    expect((initResponse.result as InitializeResult | undefined)?.serverInfo?.name).toBe('ralphgrip')
 
     // 2. Send initialized notification (no id)
     proc.stdin!.write(JSON.stringify({
@@ -103,10 +117,10 @@ describe('MCP Server — stdio E2E', () => {
     const toolsResponse = await waitForResponse(proc)
     expect(toolsResponse.result).toBeDefined()
 
-    const tools = (toolsResponse.result as any).tools
+    const tools = (toolsResponse.result as ToolsListResult | undefined)?.tools ?? []
     expect(Array.isArray(tools)).toBe(true)
 
-    const toolNames = tools.map((t: any) => t.name)
+    const toolNames = tools.map((tool) => tool.name)
     expect(toolNames).toContain('create_task')
     expect(toolNames).toContain('update_task')
     expect(toolNames).toContain('list_tasks')

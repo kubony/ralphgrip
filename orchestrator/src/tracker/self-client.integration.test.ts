@@ -95,7 +95,7 @@ describe('SelfTrackerClient — Supabase DB 연동', () => {
       .eq('id', testWorkItemId)
       .single()
 
-    expect((data as any)?.status?.name).toBe('In Progress')
+    expect((data as { status?: { name?: string } } | null)?.status?.name).toBe('In Progress')
   })
 
   // ── Test 18: addComment() — 에이전트 모드 ──

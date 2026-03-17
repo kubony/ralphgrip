@@ -212,7 +212,9 @@ describe('Work Items — Supabase DB 연동', () => {
     expect(data).toBeDefined()
     expect(data!.title).toBe('Integration test task')
     expect(data!.tracker).toBeDefined()
-    expect((data!.tracker as any).name).toBe(project.trackerName)
+    const tracker = data!.tracker as unknown as { name: string } | { name: string }[] | null
+    const trackerName = Array.isArray(tracker) ? tracker[0]?.name : tracker?.name
+    expect(trackerName).toBe(project.trackerName)
     expect(data!.status).toBeDefined()
   })
 })

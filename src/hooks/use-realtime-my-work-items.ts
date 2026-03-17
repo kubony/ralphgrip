@@ -1,20 +1,74 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import type { MyWorkItem } from '@/components/my-work/types'
 
 type WorkItemRow = Record<string, unknown> & { id: string }
 
+interface RealtimeState {
+  baseItems: MyWorkItem[]
+  overrides: Record<string, Partial<MyWorkItem>>
+  deletedIds: Set<string>
+}
+
+type RealtimeAction =
+  | { type: 'reset'; items: MyWorkItem[] }
+  | { type: 'delete'; id: string }
+  | { type: 'upsert'; item: Partial<MyWorkItem> & { id: string } }
+
+function realtimeReducer(state: RealtimeState, action: RealtimeAction): RealtimeState {
+  switch (action.type) {
+    case 'reset':
+      return {
+        baseItems: action.items,
+        overrides: {},
+        deletedIds: new Set(),
+      }
+    case 'delete': {
+      const nextOverrides = { ...state.overrides }
+      delete nextOverrides[action.id]
+      const nextDeletedIds = new Set(state.deletedIds)
+      nextDeletedIds.add(action.id)
+      return {
+        ...state,
+        overrides: nextOverrides,
+        deletedIds: nextDeletedIds,
+      }
+    }
+    case 'upsert':
+      return {
+        ...state,
+        overrides: {
+          ...state.overrides,
+          [action.item.id]: action.item,
+        },
+      }
+  }
+}
+
 export function useRealtimeMyWorkItems(
   initialItems: MyWorkItem[]
 ): MyWorkItem[] {
-  const [items, setItems] = useState<MyWorkItem[]>(initialItems)
+  const [state, dispatch] = useReducer(realtimeReducer, {
+    baseItems: initialItems,
+    overrides: {},
+    deletedIds: new Set<string>(),
+  })
   const itemIdsRef = useRef<Set<string>>(new Set(initialItems.map(i => i.id)))
 
+  const items = useMemo(() => (
+    state.baseItems
+      .filter((item) => !state.deletedIds.has(item.id))
+      .map((item) => {
+        const patch = state.overrides[item.id]
+        return patch ? { ...item, ...patch } : item
+      })
+  ), [state])
+
   useEffect(() => {
-    setItems(initialItems)
+    dispatch({ type: 'reset', items: initialItems })
     itemIdsRef.current = new Set(initialItems.map(i => i.id))
   }, [initialItems])
 
@@ -34,7 +88,7 @@ export function useRealtimeMyWorkItems(
             const oldId = payload.old?.id
             if (oldId && itemIdsRef.current.has(oldId)) {
               itemIdsRef.current.delete(oldId)
-              setItems(prev => prev.filter(item => item.id !== oldId))
+              dispatch({ type: 'delete', id: oldId })
             }
             return
           }
@@ -61,12 +115,7 @@ export function useRealtimeMyWorkItems(
             return
           }
 
-          setItems(prev =>
-            prev.map(item => {
-              if (item.id !== data.id) return item
-              return { ...item, ...data }
-            })
-          )
+          dispatch({ type: 'upsert', item: data as Partial<MyWorkItem> & { id: string } })
         }
       )
       .subscribe((status, err) => {

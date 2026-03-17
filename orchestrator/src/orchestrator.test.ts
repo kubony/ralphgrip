@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { WorkflowConfig } from './config.js'
+import type { WorkflowLoader } from './workflow-loader.js'
+import type { SelfTrackerClient, Issue } from './tracker/self-client.js'
+import type { WorkspaceManager } from './workspace/manager.js'
 
 // Mock logger
 vi.mock('./logger.js', () => ({
@@ -18,9 +22,31 @@ vi.mock('./agent/claude-runner.js', () => ({ ClaudeRunner: vi.fn() }))
 
 import { Orchestrator } from './orchestrator.js'
 
-function createMockLoader(overrides?: Partial<ReturnType<any>>) {
+type MockLoader = {
+  getConfig: ReturnType<typeof vi.fn<() => WorkflowConfig>>
+  renderPrompt: ReturnType<typeof vi.fn<(vars: Record<string, unknown>) => Promise<string>>>
+}
+
+type MockTracker = {
+  fetchActiveIssues: ReturnType<typeof vi.fn<() => Promise<Issue[]>>>
+  fetchIssueStates: ReturnType<typeof vi.fn<(ids: string[]) => Promise<Map<string, string>>>>
+  updateIssueStatus: ReturnType<typeof vi.fn<(id: string, statusName: string) => Promise<void>>>
+  addComment: ReturnType<typeof vi.fn<(issueId: string, content: string) => Promise<void>>>
+  isTerminalState: ReturnType<typeof vi.fn<(state: string) => boolean>>
+  isActiveState: ReturnType<typeof vi.fn<(state: string) => boolean>>
+}
+
+type MockWorkspaceManager = {
+  ensure: ReturnType<typeof vi.fn<(id: string) => Promise<{ path: string; created: boolean }>>>
+  prepareForRun: ReturnType<typeof vi.fn<(id: string) => Promise<string>>>
+  cleanupAfterRun: ReturnType<typeof vi.fn<(id: string) => Promise<void>>>
+  resolve: ReturnType<typeof vi.fn<(id: string) => string>>
+  remove: ReturnType<typeof vi.fn<(id: string) => Promise<void>>>
+}
+
+function createMockLoader(overrides: Partial<MockLoader> = {}): MockLoader {
   return {
-    getConfig: vi.fn(() => ({
+    getConfig: vi.fn<() => WorkflowConfig>(() => ({
       tracker: {
         kind: 'self',
         supabase_url: 'http://test',
@@ -41,29 +67,29 @@ function createMockLoader(overrides?: Partial<ReturnType<any>>) {
         allowed_tools: ['Edit', 'Write'],
       },
     })),
-    renderPrompt: vi.fn(async () => 'rendered prompt'),
+    renderPrompt: vi.fn<(vars: Record<string, unknown>) => Promise<string>>(async () => 'rendered prompt'),
     ...overrides,
   }
 }
 
-function createMockTracker() {
+function createMockTracker(): MockTracker {
   return {
-    fetchActiveIssues: vi.fn(async () => []),
-    fetchIssueStates: vi.fn(async () => new Map()),
-    updateIssueStatus: vi.fn(async () => {}),
-    addComment: vi.fn(async () => {}),
-    isTerminalState: vi.fn(() => false),
-    isActiveState: vi.fn(() => true),
+    fetchActiveIssues: vi.fn<() => Promise<Issue[]>>(async () => []),
+    fetchIssueStates: vi.fn<(ids: string[]) => Promise<Map<string, string>>>(async () => new Map()),
+    updateIssueStatus: vi.fn<(id: string, statusName: string) => Promise<void>>(async () => {}),
+    addComment: vi.fn<(issueId: string, content: string) => Promise<void>>(async () => {}),
+    isTerminalState: vi.fn<(state: string) => boolean>(() => false),
+    isActiveState: vi.fn<(state: string) => boolean>(() => true),
   }
 }
 
-function createMockWorkspaceManager() {
+function createMockWorkspaceManager(): MockWorkspaceManager {
   return {
-    ensure: vi.fn(async (id: string) => ({ path: `/tmp/ws/${id}`, created: false })),
-    prepareForRun: vi.fn(async (id: string) => `/tmp/ws/${id}`),
-    cleanupAfterRun: vi.fn(async () => {}),
-    resolve: vi.fn((id: string) => `/tmp/ws/${id}`),
-    remove: vi.fn(async () => {}),
+    ensure: vi.fn<(id: string) => Promise<{ path: string; created: boolean }>>(async (id) => ({ path: `/tmp/ws/${id}`, created: false })),
+    prepareForRun: vi.fn<(id: string) => Promise<string>>(async (id) => `/tmp/ws/${id}`),
+    cleanupAfterRun: vi.fn<(id: string) => Promise<void>>(async () => {}),
+    resolve: vi.fn<(id: string) => string>((id) => `/tmp/ws/${id}`),
+    remove: vi.fn<(id: string) => Promise<void>>(async () => {}),
   }
 }
 
@@ -78,7 +104,11 @@ describe('Orchestrator', () => {
     mockLoader = createMockLoader()
     mockTracker = createMockTracker()
     mockWsManager = createMockWorkspaceManager()
-    orchestrator = new Orchestrator(mockLoader as any, mockTracker as any, mockWsManager as any)
+    orchestrator = new Orchestrator(
+      mockLoader as unknown as WorkflowLoader,
+      mockTracker as unknown as SelfTrackerClient,
+      mockWsManager as unknown as WorkspaceManager,
+    )
   })
 
   describe('getState', () => {

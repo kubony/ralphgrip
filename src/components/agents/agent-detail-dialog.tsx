@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -56,15 +56,11 @@ export function AgentDetailDialog({ open, onOpenChange, agent, onUpdated, onDele
 
   useEffect(() => {
     if (open) {
-      setDisplayName(agent.display_name)
-      setDescription(agent.description ?? '')
-      setStatus(agent.status)
-      setEditMode(false)
       getAgentLogs(agent.id).then((result) => {
         if (result.data) setLogs(result.data as AgentLogEntry[])
       })
     }
-  }, [open, agent])
+  }, [open, agent.id])
 
   const handleSave = () => {
     startTransition(async () => {

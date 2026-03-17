@@ -150,7 +150,7 @@ describe('Orchestrator — E2E 전체 파이프라인', () => {
       .eq('id', testWorkItemId)
       .single()
 
-    const statusName = (workItem as any)?.status?.name
+    const statusName = (workItem as { status?: { name?: string } } | null)?.status?.name
     expect(['In Progress', 'Resolved', 'Closed']).toContain(statusName)
   }, 90_000) // extended timeout for Claude CLI
 })

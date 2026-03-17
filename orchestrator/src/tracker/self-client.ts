@@ -14,6 +14,23 @@ export interface Issue {
   updated_at: string
 }
 
+interface ActiveIssueRow {
+  id: string
+  number: number
+  title: string
+  description: string | null
+  priority: number | null
+  created_at: string
+  updated_at: string
+  status: { name: string }
+  project: { key: string }
+}
+
+interface IssueStateRow {
+  id: string
+  status: { name: string }
+}
+
 interface SelfTrackerConfig {
   supabaseUrl: string
   supabaseKey: string
@@ -84,7 +101,9 @@ export class SelfTrackerClient {
       throw error
     }
 
-    return (data ?? []).map((item: any) => ({
+    const rows = (data ?? []) as unknown as ActiveIssueRow[]
+
+    return rows.map((item) => ({
       id: item.id,
       identifier: `${item.project.key}-${item.number}`,
       title: item.title,
@@ -110,8 +129,9 @@ export class SelfTrackerClient {
     }
 
     const result = new Map<string, string>()
-    for (const item of data ?? []) {
-      result.set(item.id, (item as any).status.name)
+    const rows = (data ?? []) as unknown as IssueStateRow[]
+    for (const item of rows) {
+      result.set(item.id, item.status.name)
     }
     return result
   }

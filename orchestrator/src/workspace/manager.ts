@@ -104,7 +104,7 @@ export class WorkspaceManager {
   private runHook(name: string, script: string, cwd: string, fatal: boolean): Promise<void> {
     return new Promise((resolve, reject) => {
       log.info(`Running hook: ${name}`, { cwd })
-      const child = exec(`sh -lc ${JSON.stringify(script)}`, {
+      exec(`sh -lc ${JSON.stringify(script)}`, {
         cwd,
         timeout: 60_000,
       }, (error, stdout, stderr) => {

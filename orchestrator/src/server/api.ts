@@ -1,5 +1,5 @@
 import Fastify from 'fastify'
-import type { Orchestrator, OrchestratorSnapshot } from '../orchestrator.js'
+import type { Orchestrator } from '../orchestrator.js'
 import { createLogger } from '../logger.js'
 
 const log = createLogger('status-api')
