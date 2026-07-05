@@ -469,6 +469,7 @@ GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test
 RalphGrip은 에이전트의 작업 진행을 사람이 웹 UI에서 실시간으로 지켜보는 시스템이다. 보고는 "종료 시 한 번"이 아니라 **시작 → 진행 중 → 종료**의 3단계로 계속 이뤄져야 한다.
 
 - **프로젝트 고정 (레포 = 프로젝트 1:1)**: 이 레포의 RalphGrip 프로젝트는 `.ralphgrip.json`에 고정된 `RG`다. 모든 RalphGrip 툴 호출에 `project_key: "RG"`를 명시한다. 다른 프로젝트에 태스크를 만들지 않는다. 위반하면 PreToolUse hook(`enforce-project-key.sh`)이 호출을 **차단**한다.
+- **git 컨텍스트 전달**: 보고 시 git 컨텍스트(branch/commit/worktree, repo_url은 `.ralphgrip.json`)를 `git` 인자로 함께 전달한다. `create_task`/`report_*`/`mark_resolved` 모두 지원하며, 사람이 웹 UI에서 어느 레포/브랜치/워크트리에서 작업 중인지 확인할 수 있게 한다. 절차는 `ralphgrip-reporting` 스킬을 따른다.
 - **작업 시작 시**: 해당 work item에 `report_progress`로 무엇을 어떻게 진행할지 먼저 선언한다 (상태 → In Progress). 해당하는 work item이 없으면 `create_task`로 먼저 만들고 시작한다.
 - **진행 중**: 의미 있는 마일스톤(설계 확정, 핵심 파일 수정 완료, 테스트 통과 등)마다 `report_progress`로 중간 보고한다. 파일 수정 5회가 보고 없이 누적되면 hook이 컨텍스트로 중간 보고를 요구한다 — 이 요구를 받으면 즉시 보고하고 작업을 계속한다.
 - **블로커 발생 시**: `report_blocker`로 무엇이 왜 막혔는지 기록한다 (상태 → Issue).

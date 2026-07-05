@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 
 // ── Hoisted mocks (accessible in vi.mock factory) ──
 const { mockRpc, mockFrom, mockSingle, mockGetActorIds, mockGetProjectOwnerId } = vi.hoisted(() => {
@@ -155,6 +155,67 @@ describe('delete_task', () => {
     const result = await toolHandlers['delete_task']({ number: 10 })
     const parsed = JSON.parse(result.content[0].text)
     expect(parsed.success).toBe(true)
+  })
+})
+
+// ── create_task — git_context tests ──
+// Uses a self-contained chainable mock (the shared hoisted mock doesn't cover
+// getNextPosition's order/limit chain). Placed last so mockFrom.mockImplementation
+// doesn't leak into the tests above.
+describe('create_task — git_context', () => {
+  // Chainable builder: every query method returns itself; awaiting or .single()
+  // resolves to `finalResult`.
+  function chain(finalResult: unknown) {
+    const c: Record<string, unknown> = {}
+    const self = () => c
+    for (const m of ['select', 'eq', 'is', 'order', 'limit', 'ilike']) {
+      c[m] = vi.fn(self)
+    }
+    c.single = vi.fn(async () => finalResult)
+    c.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+      Promise.resolve(finalResult).then(resolve, reject)
+    return c
+  }
+
+  // Wire mockFrom to resolve tracker/status/position lookups and capture the insert arg.
+  function setupCreateMock() {
+    const captured: { insertArg?: Record<string, unknown> } = {}
+    ;(mockFrom as unknown as Mock).mockImplementation((table?: string) => {
+      if (table === 'trackers') return chain({ data: { id: 'tracker-1' }, error: null })
+      if (table === 'statuses') return chain({ data: { id: 'status-1' }, error: null })
+      // work_items: getNextPosition awaits an array; insert().select().single() returns the row.
+      const c = chain({ data: [{ position: 0 }], error: null }) as Record<string, unknown>
+      c.insert = vi.fn((arg: Record<string, unknown>) => {
+        captured.insertArg = arg
+        return chain({ data: { id: 'wi-1', number: 7, title: 'T', position: 1 }, error: null })
+      })
+      return c
+    })
+    return captured
+  }
+
+  it('git 인자 전달 시 git_context가 updated_at과 함께 insert에 포함', async () => {
+    mockGetActorIds.mockResolvedValue({ profileId: null, agentId: 'agent-1' })
+    const captured = setupCreateMock()
+
+    const git = { repo_url: 'https://github.com/kubony/ralphgrip', branch: 'feat/x', commit: 'abc123' }
+    const result = await toolHandlers['create_task']({ title: 'T', tracker: 'Task', status: 'Open', git })
+    const parsed = JSON.parse(result.content[0].text)
+
+    expect(parsed.success).toBe(true)
+    expect(captured.insertArg?.git_context).toMatchObject(git)
+    expect((captured.insertArg?.git_context as Record<string, unknown>).updated_at).toBeTruthy()
+  })
+
+  it('git 미전달 시 insertData에 git_context 키 없음', async () => {
+    mockGetActorIds.mockResolvedValue({ profileId: null, agentId: 'agent-1' })
+    const captured = setupCreateMock()
+
+    const result = await toolHandlers['create_task']({ title: 'T', tracker: 'Task', status: 'Open' })
+    const parsed = JSON.parse(result.content[0].text)
+
+    expect(parsed.success).toBe(true)
+    expect('git_context' in (captured.insertArg ?? {})).toBe(false)
   })
 })
 

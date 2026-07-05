@@ -114,6 +114,7 @@ export function registerProjectMetaTools(server: McpServer, agentCtx: AgentConte
       key: z.string().describe('Project key: 2-10 uppercase letters (A-Z). Used in URLs and work item references.'),
       project_type: z.enum(['issue', 'requirement']).describe('Project workflow type. Immutable after creation.'),
       description: z.string().optional().describe('Project description (optional)'),
+      repo_url: z.string().optional().describe('Repository URL for the project (1:1 repo identity), e.g., https://github.com/kubony/ralphgrip. Stored on settings.repo.url.'),
     },
     async (args) => {
       try {
@@ -142,15 +143,23 @@ export function registerProjectMetaTools(server: McpServer, agentCtx: AgentConte
         }
 
         // Insert only — DB triggers handle owner membership, trackers, statuses, and work-item sequence.
+        const insertData: Record<string, unknown> = {
+          name,
+          key,
+          description: args.description?.trim() || null,
+          project_type: args.project_type,
+          owner_id: ctx.ownerId,
+        }
+
+        // Repo identity (1:1 repo ↔ project): stored on settings.repo.url.
+        const repoUrl = args.repo_url?.trim()
+        if (repoUrl) {
+          insertData.settings = { repo: { url: repoUrl } }
+        }
+
         const { data, error } = await supabase
           .from('projects')
-          .insert({
-            name,
-            key,
-            description: args.description?.trim() || null,
-            project_type: args.project_type,
-            owner_id: ctx.ownerId,
-          })
+          .insert(insertData)
           .select('id, key, name, project_type')
           .single()
 
