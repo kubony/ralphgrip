@@ -10,7 +10,7 @@ import PinOff from 'lucide-react/dist/esm/icons/pin-off'
 import ExternalLink from 'lucide-react/dist/esm/icons/external-link'
 import { cn } from '@/lib/utils'
 import { toggleProjectPin } from '@/app/(dashboard)/projects/actions'
-import type { MyWorkItem } from './types'
+import type { InboxWorkItem } from './types'
 
 export interface PinnedProject {
   id: string
@@ -31,7 +31,7 @@ export interface UserProject {
 interface PinnedProjectsPopoverProps {
   pinnedProjects: PinnedProject[]
   allProjects: UserProject[]
-  workItems: MyWorkItem[]
+  workItems: InboxWorkItem[]
 }
 
 export function PinnedProjectsPopover({ pinnedProjects, allProjects, workItems }: PinnedProjectsPopoverProps) {
@@ -69,15 +69,16 @@ export function PinnedProjectsPopover({ pinnedProjects, allProjects, workItems }
       <PopoverTrigger asChild>
         <button
           className={cn(
-            'p-1.5 rounded-md transition-colors relative',
-            'text-muted-foreground hover:text-foreground hover:bg-muted'
+            'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm transition-colors relative',
+            'text-muted-foreground hover:text-foreground hover:bg-muted border'
           )}
           aria-label="프로젝트 바로가기"
           title="프로젝트 바로가기"
         >
           <Pin className="h-4 w-4" />
+          <span className="hidden sm:inline">프로젝트</span>
           {pinnedProjects.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 text-[9px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+            <span className="ml-0.5 w-4 h-4 text-[10px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center">
               {pinnedProjects.length}
             </span>
           )}
@@ -165,6 +166,3 @@ export function PinnedProjectsPopover({ pinnedProjects, allProjects, workItems }
     </Popover>
   )
 }
-
-// 하위 호환 (기존 PinnedProjects 제거 → PinnedProjectsPopover로 대체)
-export const PinnedProjects = PinnedProjectsPopover

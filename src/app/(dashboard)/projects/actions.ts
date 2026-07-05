@@ -114,6 +114,6 @@ export async function toggleProjectPin(projectId: string, isPinned: boolean) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/my-work')
+  revalidatePath('/inbox')
   return { success: true }
 }

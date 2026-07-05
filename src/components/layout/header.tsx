@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import Search from 'lucide-react/dist/esm/icons/search'
 import FolderKanban from 'lucide-react/dist/esm/icons/folder-kanban'
-import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list'
+import Inbox from 'lucide-react/dist/esm/icons/inbox'
 import Bot from 'lucide-react/dist/esm/icons/bot'
 import { UserMenu } from './user-menu'
 import { NotificationBell } from './notification-bell'
@@ -26,7 +26,7 @@ interface HeaderProps {
 }
 
 const navItems = [
-  { href: '/my-work', label: '내 작업', icon: ClipboardList },
+  { href: '/inbox', label: '인박스', icon: Inbox },
   { href: '/projects', label: '프로젝트', icon: FolderKanban },
 ]
 
@@ -37,7 +37,7 @@ export function Header({ user, userId, initialNotifications, initialUnreadCount,
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-6">
         {/* Logo */}
-        <Link href="/my-work" className="flex items-center gap-2 shrink-0">
+        <Link href="/inbox" className="flex items-center gap-2 shrink-0">
           <Image
             src="/images/ralph-logo.png"
             alt="RalphGrip"

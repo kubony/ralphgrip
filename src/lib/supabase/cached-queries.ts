@@ -15,7 +15,7 @@ import { getServiceClient } from './service'
  * - project:{id}:items — work items (1분 TTL)
  * - project:{id}:links — link counts, linked issue status (1분 TTL)
  * - project:{id}:audit — audit logs (1분 TTL)
- * - user:{id}:my-work — 내 작업 (1분 TTL)
+ * - user:{id}:inbox — 인박스 (1분 TTL)
  *
  * 보안:
  * - getProjectByKey()는 세션 클라이언트 유지 (RLS 접근 제어)
@@ -273,38 +273,103 @@ export const getProjectAuditLog = cache(async (projectId: string, limit = 50) =>
   )()
 })
 
-// 내 작업 목록 조회 (unstable_cache — 1분 TTL)
-// 담당자(assignee) + description에 이름이 언급된 항목 모두 포함
-export const getMyWorkItems = cache(async (userId: string, fullName?: string | null) => {
+// 오케스트레이터 인박스 작업 목록 조회 (unstable_cache — 1분 TTL)
+// 유저가 멤버인 프로젝트들의 work_items 중 감독 대상 상태만 (Resolved / Issue / In Progress)
+const INBOX_STATUS_NAMES = ['Resolved', 'Issue', 'In Progress']
+
+export const getInboxWorkItems = cache(async (userId: string) => {
   return unstable_cache(
     async () => {
       const supabase = getServiceClient()
-      let query = supabase
+
+      // 유저가 멤버인 프로젝트 목록
+      const { data: memberships } = await supabase
+        .from('project_members')
+        .select('project_id')
+        .eq('user_id', userId)
+      const projectIds = (memberships ?? []).map(m => m.project_id)
+      if (projectIds.length === 0) return []
+
+      const { data } = await supabase
         .from('work_items')
         .select(`
           *,
           project:projects(id, name, key, project_type),
           tracker:trackers(id, name, color),
-          status:statuses(id, name, color, position, is_closed),
+          status:statuses!inner(id, name, color, position, is_closed),
           assignee:profiles!work_items_assignee_id_fkey(id, full_name, avatar_url),
           reporter:profiles!work_items_reporter_id_fkey(id, full_name, avatar_url),
           agent_assignee:agents!work_items_agent_assignee_id_fkey(id, name, display_name, avatar_url),
           agent_reporter:agents!work_items_agent_reporter_id_fkey(id, name, display_name, avatar_url)
         `)
+        .in('project_id', projectIds)
+        .in('status.name', INBOX_STATUS_NAMES)
         .is('deleted_at', null)
-
-      if (fullName) {
-        const escaped = fullName.replace(/[%_]/g, '\\$&')
-        query = query.or(`assignee_id.eq.${userId},reporter_id.eq.${userId},description.ilike.%${escaped}%`)
-      } else {
-        query = query.or(`assignee_id.eq.${userId},reporter_id.eq.${userId}`)
-      }
-
-      const { data } = await query.order('updated_at', { ascending: false })
+        .order('updated_at', { ascending: false })
       return data ?? []
     },
-    [`my-work-${userId}-${fullName ?? ''}`],
-    { tags: [`user:${userId}:my-work`], revalidate: 60 }
+    [`inbox-work-items-${userId}`],
+    { tags: [`user:${userId}:inbox`], revalidate: 60 }
+  )()
+})
+
+// 인박스 에이전트 활동 피드: 유저 접근 프로젝트 범위의 에이전트 댓글 (최신순 — 1분 TTL)
+export const getRecentAgentComments = cache(async (userId: string, limit = 20) => {
+  return unstable_cache(
+    async () => {
+      const supabase = getServiceClient()
+
+      const { data: memberships } = await supabase
+        .from('project_members')
+        .select('project_id')
+        .eq('user_id', userId)
+      const projectIds = (memberships ?? []).map(m => m.project_id)
+      if (projectIds.length === 0) return []
+
+      const { data } = await supabase
+        .from('comments')
+        .select(`
+          id, content, created_at,
+          agent:agents!comments_agent_id_fkey(id, display_name, avatar_url, agent_kind),
+          work_item:work_items!inner(id, number, title, project_id,
+            project:projects!inner(id, name, key)
+          )
+        `)
+        .not('agent_id', 'is', null)
+        .is('deleted_at', null)
+        .is('work_item.deleted_at', null)
+        .in('work_item.project_id', projectIds)
+        .order('created_at', { ascending: false })
+        .limit(limit)
+
+      // Supabase FK join 정규화 (배열 → 단일 객체)
+      return (data ?? []).map(row => {
+        const rawWi = Array.isArray(row.work_item) ? row.work_item[0] : row.work_item
+        const rawProject = rawWi?.project
+        return {
+          ...row,
+          agent: Array.isArray(row.agent) ? row.agent[0] ?? null : row.agent,
+          work_item: {
+            ...rawWi,
+            project: Array.isArray(rawProject) ? rawProject[0] : rawProject,
+          },
+        }
+      }) as unknown as {
+        id: string
+        content: string
+        created_at: string
+        agent: { id: string; display_name: string; avatar_url: string | null; agent_kind: string } | null
+        work_item: {
+          id: string
+          number: number
+          title: string
+          project_id: string
+          project: { id: string; name: string; key: string }
+        }
+      }[]
+    },
+    [`recent-agent-comments-${userId}-${limit}`],
+    { tags: [`user:${userId}:inbox`], revalidate: 60 }
   )()
 })
 
@@ -362,7 +427,7 @@ export const getMyMentionedComments = cache(async (userId: string) => {
       }[]
     },
     [`my-mentioned-comments-${userId}`],
-    { tags: [`user:${userId}:my-work`], revalidate: 60 }
+    { tags: [`user:${userId}:inbox`], revalidate: 60 }
   )()
 })
 
@@ -374,17 +439,6 @@ export const getMyReadCommentIds = cache(async (userId: string) => {
     .select('comment_id')
     .eq('user_id', userId)
   return new Set((data ?? []).map(d => d.comment_id))
-})
-
-// 내 핀 고정 작업 ID 조회 (React.cache만 — 사용자별 데이터)
-export const getMyPinnedItemIds = cache(async (userId: string) => {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('user_pinned_items')
-    .select('work_item_id')
-    .eq('user_id', userId)
-    .order('pinned_at')
-  return new Set((data ?? []).map(d => d.work_item_id))
 })
 
 // 고정된 프로젝트 목록 조회 (React.cache만 — 사용자별 데이터)

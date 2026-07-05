@@ -11,7 +11,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list'
+import Inbox from 'lucide-react/dist/esm/icons/inbox'
 import FolderKanban from 'lucide-react/dist/esm/icons/folder-kanban'
 import SettingsIcon from 'lucide-react/dist/esm/icons/settings'
 import Plus from 'lucide-react/dist/esm/icons/plus'
@@ -175,11 +175,11 @@ export function CommandPalette() {
           <>
             <CommandGroup heading="빠른 이동">
               <CommandItem
-                value="내 작업"
-                onSelect={() => runCommand(() => router.push('/my-work'))}
+                value="인박스"
+                onSelect={() => runCommand(() => router.push('/inbox'))}
               >
-                <ClipboardList className="h-4 w-4" />
-                <span>내 작업</span>
+                <Inbox className="h-4 w-4" />
+                <span>인박스</span>
               </CommandItem>
               <CommandItem
                 value="프로젝트"
