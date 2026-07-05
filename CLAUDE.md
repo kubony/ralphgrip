@@ -466,7 +466,10 @@ GitHub Actions (`.github/workflows/ci.yml`): push/PR 시 lint + typecheck + test
 
 ## 에이전트 작업 보고 규칙 (MUST)
 
-- 파일을 수정하는 작업(Edit/Write/MultiEdit 등)을 했다면 응답을 종료하기 전에 **반드시** RalphGrip MCP 툴로 해당 work item에 보고한다: 진행 중이면 `report_progress`, 블로커면 `report_blocker`, 완료면 `mark_resolved`.
-- 보고 없이 종료하면 Stop hook이 종료를 **차단**하고 재작업을 요구한다. 보고 툴 호출만이 이 차단을 해제한다.
-- 이번 작업에 해당하는 work item이 없으면 `create_task`로 먼저 만들고 시작·보고한다.
-- 보고 절차는 `ralphgrip-reporting` 스킬을 따른다. RalphGrip MCP 서버가 연결돼 있지 않아 보고가 불가능한 경우에만 그대로 종료한다.
+RalphGrip은 에이전트의 작업 진행을 사람이 웹 UI에서 실시간으로 지켜보는 시스템이다. 보고는 "종료 시 한 번"이 아니라 **시작 → 진행 중 → 종료**의 3단계로 계속 이뤄져야 한다.
+
+- **작업 시작 시**: 해당 work item에 `report_progress`로 무엇을 어떻게 진행할지 먼저 선언한다 (상태 → In Progress). 해당하는 work item이 없으면 `create_task`로 먼저 만들고 시작한다.
+- **진행 중**: 의미 있는 마일스톤(설계 확정, 핵심 파일 수정 완료, 테스트 통과 등)마다 `report_progress`로 중간 보고한다. 파일 수정 5회가 보고 없이 누적되면 hook이 컨텍스트로 중간 보고를 요구한다 — 이 요구를 받으면 즉시 보고하고 작업을 계속한다.
+- **블로커 발생 시**: `report_blocker`로 무엇이 왜 막혔는지 기록한다 (상태 → Issue).
+- **종료 시**: 완료면 `mark_resolved`(상태 → Resolved), 미완이면 `report_progress`로 현재 상태를 남긴다. 보고 없이 종료하면 Stop hook이 종료를 **차단**하고 재작업을 요구한다. 보고 툴 호출만이 이 차단을 해제한다.
+- 보고 절차와 문체는 `ralphgrip-reporting` 스킬을 따른다. RalphGrip MCP 서버가 연결돼 있지 않아 보고가 불가능한 경우에만 그대로 종료한다.

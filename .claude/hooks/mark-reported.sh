@@ -14,6 +14,6 @@ fi
 [ -z "${session_id:-}" ] && exit 0
 
 dir="${CLAUDE_PROJECT_DIR:-.}/.claude/state"
-rm -f "$dir/dirty-${session_id}"
+rm -f "$dir/dirty-${session_id}" "$dir/edits-${session_id}"
 
 exit 0
