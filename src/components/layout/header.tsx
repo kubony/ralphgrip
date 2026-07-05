@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import Search from 'lucide-react/dist/esm/icons/search'
 import FolderKanban from 'lucide-react/dist/esm/icons/folder-kanban'
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list'
-import BarChart3 from 'lucide-react/dist/esm/icons/bar-chart-3'
 import Bot from 'lucide-react/dist/esm/icons/bot'
 import { UserMenu } from './user-menu'
 import { NotificationBell } from './notification-bell'
@@ -29,7 +28,6 @@ interface HeaderProps {
 const navItems = [
   { href: '/my-work', label: '내 작업', icon: ClipboardList },
   { href: '/projects', label: '프로젝트', icon: FolderKanban },
-  { href: '/pipeline', label: '사업현황', icon: BarChart3 },
 ]
 
 export function Header({ user, userId, initialNotifications, initialUnreadCount, activeAgentCount = 0 }: HeaderProps) {

@@ -43,9 +43,6 @@ export interface WorkItemExternalLink {
   label?: string
 }
 
-export type PipelinePhase = 'prospect' | 'sales' | 'contracted' | 'active' | 'delivered' | 'settled'
-export type PipelineCategory = 'internal' | 'government' | 'contract'
-
 export interface ProjectSettings {
   show_tracker_id?: boolean
   show_tracker_id_in_document?: boolean
@@ -53,12 +50,6 @@ export interface ProjectSettings {
   slack_channel_id?: string
   google_drive_url?: string
   external_links?: ExternalLinkEntry[]
-  pipeline_start_date?: string
-  pipeline_end_date?: string
-  pipeline_budget?: string
-  pipeline_phase?: PipelinePhase
-  pipeline_note?: string
-  pipeline_category?: PipelineCategory
   cover_image_path?: string
 }
 

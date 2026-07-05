@@ -153,11 +153,3 @@
 .timeline-focus-mode main {
   height: 100vh !important;
 }
-
-/* Pipeline Focus Mode */
-.pipeline-focus-mode [data-main-header] {
-  display: none !important;
-}
-.pipeline-focus-mode main {
-  height: 100vh !important;
-}
