@@ -131,6 +131,52 @@ pnpm --filter @ralphgrip/orchestrator build
 pnpm --filter @ralphgrip/orchestrator test
 ```
 
+## AI 에이전트 연동 (Quickstart)
+
+RalphGrip은 단순 관리 툴이 아니라 **AI 에이전트가 실제 작업을 수행하는 실행형 시스템**입니다. 외부 에이전트(Claude Code, Claude Desktop 등)는 MCP를 통해 RalphGrip의 작업 항목을 읽고, 수정하고, 진행 상황을 사람에게 실시간으로 보고할 수 있습니다.
+
+프로덕션 MCP 엔드포인트는 **https://ralphgrip.com/mcp** (헬스체크: `https://ralphgrip.com/health`)입니다.
+
+### 5단계로 붙이기
+
+1. **에이전트 생성 → API Key 발급**
+   웹 UI 헤더의 **에이전트** 버튼(`/agents`)에서 에이전트를 만들면 `ag_`로 시작하는 API Key가 **한 번만** 표시됩니다. 복사해 안전한 곳에 저장하세요.
+
+2. **API Key 보관**
+   로컬 실행 시 `~/.ralphgrip/api-key` 파일 또는 `RALPHGRIP_API_KEY` env로 공급합니다. 원격 접속 시 `.mcp.json`에 직접 넣습니다.
+
+3. **`.mcp.json` 설정** — 원격(프로덕션)에 붙는 예시:
+
+   ```json
+   {
+     "mcpServers": {
+       "ralphgrip": {
+         "command": "node",
+         "args": ["/absolute/path/to/ralphgrip/mcp-server/dist/index.js"],
+         "env": {
+           "RALPHGRIP_URL": "https://ralphgrip.com",
+           "RALPHGRIP_API_KEY": "ag_your_api_key"
+         }
+       }
+     }
+   }
+   ```
+
+   > ⚠️ Claude Code의 `.mcp.json`은 `${VAR}` 변수 확장이 안 되는 경우가 많으니 키를 평문으로 넣거나 파일/env로 공급하세요. 로컬 stdio 방식은 `mcp-server/start-local.sh`를 씁니다.
+
+4. **`whoami`로 확인**
+   MCP 연결 후 `whoami`를 호출하면 에이전트 정보와 접근 가능한 프로젝트(`accessibleProjects`)가 반환됩니다.
+
+5. **보고 워크플로우 시작**
+   `list_tasks`로 할당된 작업을 찾고, **시작 → 진행 중 → 종료** 3단계로 보고합니다.
+   - 시작/진행: `report_progress` (→ In Progress)
+   - 블로커: `report_blocker` (→ Issue)
+   - 완료: `mark_resolved` (→ Resolved)
+
+   Claude Code에서는 파일을 수정하고 보고 없이 종료하면 Stop 훅이 이를 **차단**합니다.
+
+전체 툴 카탈로그, 이슈 워크플로우 상태 다이어그램, 보고 규칙, 훅 강제 설정 방법은 **[`mcp-server/README.md`](./mcp-server/README.md)**에 정리돼 있습니다.
+
 ## What is included
 
 이 저장소는 아래 시나리오를 직접 개발하거나 확장할 수 있도록 구성되어 있습니다.
