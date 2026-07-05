@@ -227,6 +227,53 @@ describe('create_project', () => {
     expect(ctx.accessibleProjectIds).toContain('new-proj-uuid')
   })
 
+  it('repo_url 전달 시 settings.repo.url로 insert', async () => {
+    const created = { id: 'new-proj-uuid', key: 'DEMO', name: 'Demo', project_type: 'issue' }
+    let insertArg: Record<string, unknown> | undefined
+    mockFrom.mockReturnValueOnce({
+      insert: vi.fn((arg: Record<string, unknown>) => {
+        insertArg = arg
+        return {
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({ data: created, error: null }),
+          }),
+        }
+      }),
+    })
+
+    const handler = handlerFor(ownedCtx())
+    const result = await handler({
+      name: 'Demo',
+      key: 'DEMO',
+      project_type: 'issue',
+      repo_url: 'https://github.com/kubony/ralphgrip',
+    })
+    const parsed = JSON.parse(result.content[0].text)
+
+    expect(parsed.success).toBe(true)
+    expect(insertArg?.settings).toEqual({ repo: { url: 'https://github.com/kubony/ralphgrip' } })
+  })
+
+  it('repo_url 미전달 시 settings 키 없음', async () => {
+    const created = { id: 'new-proj-uuid', key: 'DEMO', name: 'Demo', project_type: 'issue' }
+    let insertArg: Record<string, unknown> | undefined
+    mockFrom.mockReturnValueOnce({
+      insert: vi.fn((arg: Record<string, unknown>) => {
+        insertArg = arg
+        return {
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({ data: created, error: null }),
+          }),
+        }
+      }),
+    })
+
+    const handler = handlerFor(ownedCtx())
+    await handler({ name: 'Demo', key: 'DEMO', project_type: 'issue' })
+
+    expect('settings' in (insertArg ?? {})).toBe(false)
+  })
+
   it('중복 key(23505)는 CONFLICT', async () => {
     mockFrom.mockReturnValueOnce({
       insert: vi.fn().mockReturnValue({

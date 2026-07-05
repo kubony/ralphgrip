@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { supabase } from '../supabase.js'
 import { logAgentAction, resolveProjectId } from '../auth.js'
+import { gitArg, buildGitContext } from './git-context.js'
 import { toolSuccess, toolError } from '../types.js'
 import type { AgentContext } from '../auth.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -62,18 +63,23 @@ export function registerAgentInfoTools(server: McpServer, agentCtx: AgentContext
       message: z.string().describe('Progress message'),
       project_key: z.string().optional().describe('Project key (required if agent has multiple projects)'),
       set_in_progress: z.boolean().default(true).describe('Set status to "In Progress"'),
+      git: gitArg,
     },
     async (args) => {
       try {
         const projectId = await resolveProjectId(ctx, args.project_key)
         const workItem = await resolveWorkItemByNumber(projectId, args.number)
 
-        // Optionally update status to In Progress
+        // Status + git context in a single update. Git is only touched when provided
+        // (omitting it keeps the existing value); when provided it replaces the value.
+        const updates: Record<string, unknown> = {}
         if (args.set_in_progress) {
           const statusId = await resolveStatusId(projectId, 'In Progress')
-          if (statusId) {
-            await supabase.from('work_items').update({ status_id: statusId }).eq('id', workItem.id)
-          }
+          if (statusId) updates.status_id = statusId
+        }
+        if (args.git) updates.git_context = buildGitContext(args.git)
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('work_items').update(updates).eq('id', workItem.id)
         }
 
         // Add comment as agent
@@ -103,15 +109,19 @@ export function registerAgentInfoTools(server: McpServer, agentCtx: AgentContext
       number: z.number().describe('Work item number'),
       blocker: z.string().describe('Description of the blocker'),
       project_key: z.string().optional().describe('Project key'),
+      git: gitArg,
     },
     async (args) => {
       try {
         const projectId = await resolveProjectId(ctx, args.project_key)
         const workItem = await resolveWorkItemByNumber(projectId, args.number)
 
+        const updates: Record<string, unknown> = {}
         const statusId = await resolveStatusId(projectId, 'Issue')
-        if (statusId) {
-          await supabase.from('work_items').update({ status_id: statusId }).eq('id', workItem.id)
+        if (statusId) updates.status_id = statusId
+        if (args.git) updates.git_context = buildGitContext(args.git)
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('work_items').update(updates).eq('id', workItem.id)
         }
 
         await supabase.from('comments').insert({
@@ -141,15 +151,19 @@ export function registerAgentInfoTools(server: McpServer, agentCtx: AgentContext
       number: z.number().describe('Work item number'),
       summary: z.string().describe('Completion summary'),
       project_key: z.string().optional().describe('Project key'),
+      git: gitArg,
     },
     async (args) => {
       try {
         const projectId = await resolveProjectId(ctx, args.project_key)
         const workItem = await resolveWorkItemByNumber(projectId, args.number)
 
+        const updates: Record<string, unknown> = {}
         const statusId = await resolveStatusId(projectId, 'Resolved')
-        if (statusId) {
-          await supabase.from('work_items').update({ status_id: statusId }).eq('id', workItem.id)
+        if (statusId) updates.status_id = statusId
+        if (args.git) updates.git_context = buildGitContext(args.git)
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('work_items').update(updates).eq('id', workItem.id)
         }
 
         await supabase.from('comments').insert({

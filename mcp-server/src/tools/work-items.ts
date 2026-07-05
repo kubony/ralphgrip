@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { supabase, getProjectId, getProjectOwnerId, getActorIds } from '../supabase.js'
 import { resolveProjectId, logAgentAction } from '../auth.js'
+import { gitArg, buildGitContext } from './git-context.js'
 import { toolSuccess, toolError } from '../types.js'
 import type { AgentContext } from '../auth.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -116,6 +117,7 @@ export function registerWorkItemTools(server: McpServer, agentCtx: AgentContext 
       reporter_id: z.string().uuid().optional().describe('Reporter profile UUID (legacy mode)'),
       parent_number: z.number().optional().describe('Parent task number to create as subtask'),
       project_key: z.string().optional().describe('Project key (required if agent has multiple projects)'),
+      git: gitArg,
     },
     async (args) => {
       try {
@@ -149,6 +151,11 @@ export function registerWorkItemTools(server: McpServer, agentCtx: AgentContext 
             position,
             created_by_ai: true,
             ai_metadata: { model: 'mcp-server', last_action: 'create', agent_id: actorIds.agentId },
+          }
+
+          // Git context: stored as-is (replace) with a server updated_at when provided.
+          if (args.git) {
+            insertData.git_context = buildGitContext(args.git)
           }
 
           // Reporter: agent or profile

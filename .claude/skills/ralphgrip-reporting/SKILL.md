@@ -20,6 +20,21 @@ Stop hook이 "보고되지 않았습니다"라고 차단하면, 아래 절차를
    - 레포 루트 `.ralphgrip.json`의 `project_key`를 읽어 모든 RalphGrip 툴 호출에 `project_key`로 명시한다 (이 레포는 `RG`)
    - 다른 프로젝트에 태스크를 만들지 않는다. 누락하거나 다른 키를 쓰면 PreToolUse hook(`enforce-project-key.sh`)이 호출을 차단한다
 
+0.5. **git 컨텍스트 수집 (보고 전 1회)**
+   - 사람이 웹 UI에서 "이 태스크를 어느 레포/브랜치/워크트리에서 작업 중인지" 볼 수 있도록, 모든 보고 툴에 `git` 인자를 함께 넘긴다.
+   - 셸에서 아래를 수집한다:
+     ```bash
+     branch=$(git branch --show-current)
+     commit=$(git rev-parse --short HEAD)
+     worktree=$PWD   # 메인 체크아웃과 다를 때만 포함(같으면 생략 가능)
+     ```
+   - `repo_url`은 레포 루트 `.ralphgrip.json`의 `repo_url` 값을 사용한다 (이 레포는 `https://github.com/kubony/ralphgrip`).
+   - 모든 `create_task` / `report_progress` / `report_blocker` / `mark_resolved` 호출에 다음 형태로 전달한다:
+     ```json
+     "git": { "repo_url": "...", "branch": "...", "worktree": "...", "commit": "..." }
+     ```
+   - `updated_at`은 서버가 기록 시점에 자동으로 설정하므로 넘기지 않는다. 값이 바뀌면 매 보고마다 교체(merge 아님)된다.
+
 1. **현재 work item 확인**
    - `mcp__ralphgrip__whoami`로 내 정체성/권한 확인
    - `mcp__ralphgrip__list_tasks`로 나에게 할당된 열린 work item을 찾는다
