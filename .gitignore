@@ -33,8 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# MCP config (contains secrets)
-.mcp.json
+# MCP config — 시크릿 없음(start-local.sh 래퍼가 .env.local/~/.ralphgrip에서 로드) → 커밋 대상
 
 # vercel
 .vercel
@@ -42,7 +41,7 @@ yarn-error.log*
 # AI agents & IDE configs
 .agent/
 .agents/
-.claude/
+.claude/settings.local.json
 .codex/
 .gemini/
 .omx/
@@ -62,3 +61,9 @@ next-env.d.ts
 .env.local
 .env*.local
 .npm-cache
+
+# Claude Code local state (RalphGrip reporting hooks)
+/.claude/state/
+
+# Supabase CLI local artifacts
+supabase/.temp/

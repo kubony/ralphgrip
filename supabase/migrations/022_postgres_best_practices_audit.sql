@@ -49,27 +49,38 @@ ALTER FUNCTION public.soft_delete_work_item(uuid) SET search_path = public;
 ALTER FUNCTION public.touch_project_view(uuid) SET search_path = public;
 ALTER FUNCTION public.update_comments_updated_at() SET search_path = public;
 ALTER FUNCTION public.update_updated_at() SET search_path = public;
-ALTER FUNCTION public.update_work_item_level() SET search_path = public;
+-- update_work_item_level()는 마이그레이션에 정의되지 않은 함수(과거 Supabase MCP로 직접 생성됨).
+-- 깨끗한 순차 적용 시 부재하므로, 존재할 때만 search_path 하드닝을 적용하도록 가드한다.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'update_work_item_level'
+  ) THEN
+    ALTER FUNCTION public.update_work_item_level() SET search_path = public;
+  END IF;
+END $$;
 ALTER FUNCTION public.validate_work_item_link() SET search_path = public;
 
 -- =============================================
 -- 3. Views: SECURITY DEFINER → SECURITY INVOKER
 -- Best Practice: security-privileges
 -- =============================================
-CREATE OR REPLACE VIEW public.active_projects
+-- [정합화] 017이 이 뷰들을 SELECT * 로 생성했고, project_type/settings 등 신규 컬럼이
+-- 중간에 삽입되면 CREATE OR REPLACE로는 컬럼 순서 변경 불가(42P16). 또한 명시 컬럼 목록은
+-- 아직 존재하지 않는 컬럼(start_date는 032에서 추가)을 참조한다. 따라서 DROP 후 SELECT * 로
+-- 재생성하여 security_invoker만 적용한다(017/032와 동일한 SELECT * 방식).
+DROP VIEW IF EXISTS public.active_projects;
+CREATE VIEW public.active_projects
   WITH (security_invoker = true) AS
-  SELECT id, name, description, key, owner_id, created_at, updated_at,
-         project_type, settings, deleted_at
-  FROM public.projects
+  SELECT * FROM public.projects
   WHERE deleted_at IS NULL;
 
-CREATE OR REPLACE VIEW public.active_work_items
+DROP VIEW IF EXISTS public.active_work_items;
+CREATE VIEW public.active_work_items
   WITH (security_invoker = true) AS
-  SELECT id, project_id, tracker_id, status_id, parent_id, number, title,
-         description, assignee_id, reporter_id, priority, due_date,
-         "position", created_at, updated_at, external_url,
-         estimated_hours, actual_hours, start_date, deleted_at
-  FROM public.work_items
+  SELECT * FROM public.work_items
   WHERE deleted_at IS NULL;
 
 -- =============================================
@@ -80,8 +91,18 @@ CREATE OR REPLACE VIEW public.active_work_items
 DROP INDEX IF EXISTS public.idx_projects_name_trgm;
 DROP INDEX IF EXISTS public.idx_work_items_title_trgm;
 
--- Move extension to extensions schema
-ALTER EXTENSION pg_trgm SET SCHEMA extensions;
+-- [정합화] pg_trgm은 과거 MCP로 설치됐고 마이그레이션엔 CREATE EXTENSION이 없다.
+-- fresh DB엔 부재하므로 extensions 스키마에 직접 설치. 이미 public에 있으면 extensions로 이동.
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace
+    WHERE e.extname = 'pg_trgm' AND n.nspname = 'public'
+  ) THEN
+    ALTER EXTENSION pg_trgm SET SCHEMA extensions;
+  END IF;
+END $$;
 
 -- Recreate GIN indexes with extensions schema operator class
 CREATE INDEX idx_projects_name_trgm

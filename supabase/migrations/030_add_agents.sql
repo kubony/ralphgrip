@@ -53,14 +53,22 @@ ALTER TABLE public.work_item_audit_logs
 CREATE INDEX idx_work_item_audit_logs_agent ON public.work_item_audit_logs(agent_id) WHERE agent_id IS NOT NULL;
 
 -- 3-3. notifications: agent_actor_id
-ALTER TABLE public.notifications
-  ADD COLUMN agent_actor_id uuid REFERENCES public.agents(id) ON DELETE SET NULL;
-
-ALTER TABLE public.notifications
-  ADD CONSTRAINT notifications_actor_or_agent
-    CHECK (NOT (actor_id IS NOT NULL AND agent_actor_id IS NOT NULL));
-
-CREATE INDEX idx_notifications_agent_actor ON public.notifications(agent_actor_id) WHERE agent_actor_id IS NOT NULL;
+-- [정합화] notifications 테이블은 현재 canonical 스키마(supabase.ts)에 존재하지 않는다
+-- (과거 존재해 030 작성 시점엔 있었으나 이후 MCP로 제거된 것으로 판단). 따라서 존재할 때만 적용.
+DO $$
+BEGIN
+  IF to_regclass('public.notifications') IS NOT NULL THEN
+    ALTER TABLE public.notifications
+      ADD COLUMN IF NOT EXISTS agent_actor_id uuid REFERENCES public.agents(id) ON DELETE SET NULL;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'notifications_actor_or_agent') THEN
+      ALTER TABLE public.notifications
+        ADD CONSTRAINT notifications_actor_or_agent
+          CHECK (NOT (actor_id IS NOT NULL AND agent_actor_id IS NOT NULL));
+    END IF;
+    CREATE INDEX IF NOT EXISTS idx_notifications_agent_actor
+      ON public.notifications(agent_actor_id) WHERE agent_actor_id IS NOT NULL;
+  END IF;
+END $$;
 
 -- 3-4. work_items: agent_reporter_id, agent_assignee_id
 ALTER TABLE public.work_items
