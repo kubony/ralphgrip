@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { supabase, getProjectId } from '../supabase.js'
-import { resolveProjectId } from '../auth.js'
+import { resolveProjectId, logAgentAction } from '../auth.js'
 import { toolSuccess, toolError } from '../types.js'
 import type { AgentContext } from '../auth.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -95,6 +95,94 @@ export function registerProjectMetaTools(server: McpServer, agentCtx: AgentConte
         if (error) return toolError('INTERNAL_ERROR', error.message)
 
         return toolSuccess({ projects: data ?? [] })
+      } catch (err) {
+        return toolError('INTERNAL_ERROR', err instanceof Error ? err.message : String(err))
+      }
+    }
+  )
+
+  // ── create_project (API key mode only; owned/global agents only) ──
+  // Requires an owner-bound agent context — legacy env mode has no owner to attribute.
+  if (!agentCtx) return
+  const ctx = agentCtx
+
+  server.tool(
+    'create_project',
+    'Create a new RalphGrip project owned by the agent owner. DB triggers auto-provision the owner membership, default trackers (Folder + type tracker), and statuses — do not create those separately. Only owned/global agents may call this.',
+    {
+      name: z.string().describe('Project name'),
+      key: z.string().describe('Project key: 2-10 uppercase letters (A-Z). Used in URLs and work item references.'),
+      project_type: z.enum(['issue', 'requirement']).describe('Project workflow type. Immutable after creation.'),
+      description: z.string().optional().describe('Project description (optional)'),
+    },
+    async (args) => {
+      try {
+        // Permission: only owner-bound (owned/global) agents, never project-scoped or restricted.
+        if (
+          (ctx.category !== 'owned' && ctx.category !== 'global') ||
+          !ctx.ownerId ||
+          ctx.projectId
+        ) {
+          return toolError(
+            'PERMISSION_DENIED',
+            'Only owned/global agents can create projects. Project-scoped and restricted agents are not allowed.'
+          )
+        }
+
+        // Validate name (matches web app: non-empty).
+        const name = args.name?.trim()
+        if (!name) {
+          return toolError('VALIDATION_ERROR', '프로젝트 이름을 입력해주세요.')
+        }
+
+        // Validate key (matches web app: uppercase, 2-10 letters).
+        const key = args.key?.toUpperCase() ?? ''
+        if (!/^[A-Z]{2,10}$/.test(key)) {
+          return toolError('VALIDATION_ERROR', '프로젝트 키는 2-10자의 영문 대문자여야 합니다.')
+        }
+
+        // Insert only — DB triggers handle owner membership, trackers, statuses, and work-item sequence.
+        const { data, error } = await supabase
+          .from('projects')
+          .insert({
+            name,
+            key,
+            description: args.description?.trim() || null,
+            project_type: args.project_type,
+            owner_id: ctx.ownerId,
+          })
+          .select('id, key, name, project_type')
+          .single()
+
+        if (error) {
+          if (error.code === '23505') {
+            return toolError('CONFLICT', `이미 존재하는 key입니다: ${key}`)
+          }
+          return toolError('INTERNAL_ERROR', error.message)
+        }
+
+        // Keep the session's access cache fresh so create_task works immediately
+        // in the same session (accessibleProjectIds is computed once at session init).
+        if (!ctx.accessibleProjectIds.includes(data.id)) {
+          ctx.accessibleProjectIds.push(data.id)
+        }
+
+        await logAgentAction(ctx.agentId, 'create_project', {
+          project_id: data.id,
+          key: data.key,
+          project_type: data.project_type,
+        })
+
+        return toolSuccess({
+          success: true,
+          project: {
+            id: data.id,
+            key: data.key,
+            name: data.name,
+            project_type: data.project_type,
+          },
+          message: `Project "${data.name}" (${data.key}) created`,
+        })
       } catch (err) {
         return toolError('INTERNAL_ERROR', err instanceof Error ? err.message : String(err))
       }
