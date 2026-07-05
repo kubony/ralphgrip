@@ -38,7 +38,6 @@ export async function proxy(request: NextRequest) {
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/projects') ||
     request.nextUrl.pathname.startsWith('/my-work') ||
-    request.nextUrl.pathname.startsWith('/pipeline') ||
     request.nextUrl.pathname.startsWith('/settings')
 
   if (!user && isProtectedRoute) {
