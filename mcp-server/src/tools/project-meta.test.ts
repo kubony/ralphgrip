@@ -138,3 +138,107 @@ describe('list_projects', () => {
     expect(parsed.projects[0].key).toBe('TST')
   })
 })
+
+describe('create_project', () => {
+  type AgentCtx = {
+    agentId: string
+    category: 'global' | 'owned' | 'restricted'
+    ownerId: string | null
+    projectId: string | null
+    accessibleProjectIds: string[]
+  }
+
+  // Register a fresh instance with the given agent context and return its create_project handler.
+  function handlerFor(ctx: AgentCtx): ToolHandler {
+    const handlers: Record<string, ToolHandler> = {}
+    const srv = {
+      tool: vi.fn((name: string, _d: string, _s: unknown, handler: ToolHandler) => {
+        handlers[name] = handler
+      }),
+    }
+    registerProjectMetaTools(srv as never, ctx as never)
+    return handlers['create_project']
+  }
+
+  const ownedCtx = (): AgentCtx => ({
+    agentId: 'agent-1',
+    category: 'owned',
+    ownerId: 'owner-1',
+    projectId: null,
+    accessibleProjectIds: [],
+  })
+
+  it('레거시 모드(agentCtx 없음)에서는 등록되지 않음', () => {
+    // toolHandlers는 파일 상단에서 agentCtx 없이 등록됨 → create_project 미등록
+    expect(toolHandlers['create_project']).toBeUndefined()
+  })
+
+  it('restricted 에이전트는 PERMISSION_DENIED', async () => {
+    const handler = handlerFor({
+      agentId: 'agent-1',
+      category: 'restricted',
+      ownerId: 'owner-1',
+      projectId: null,
+      accessibleProjectIds: [],
+    })
+    const result = await handler({ name: 'X', key: 'ABC', project_type: 'issue' })
+    const parsed = JSON.parse(result.content[0].text)
+    expect(parsed.error).toBe('PERMISSION_DENIED')
+  })
+
+  it('project-scoped 에이전트는 PERMISSION_DENIED', async () => {
+    const handler = handlerFor({
+      agentId: 'agent-1',
+      category: 'owned',
+      ownerId: 'owner-1',
+      projectId: 'proj-scoped',
+      accessibleProjectIds: ['proj-scoped'],
+    })
+    const result = await handler({ name: 'X', key: 'ABC', project_type: 'issue' })
+    const parsed = JSON.parse(result.content[0].text)
+    expect(parsed.error).toBe('PERMISSION_DENIED')
+  })
+
+  it('잘못된 key는 VALIDATION_ERROR', async () => {
+    const handler = handlerFor(ownedCtx())
+    const result = await handler({ name: 'X', key: 'a1', project_type: 'issue' })
+    const parsed = JSON.parse(result.content[0].text)
+    expect(parsed.error).toBe('VALIDATION_ERROR')
+  })
+
+  it('정상 생성 시 project 반환 + accessibleProjectIds에 추가', async () => {
+    const created = { id: 'new-proj-uuid', key: 'DEMO', name: 'Demo', project_type: 'issue' }
+    mockFrom.mockReturnValueOnce({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: created, error: null }),
+        }),
+      }),
+    })
+
+    const ctx = ownedCtx()
+    const handler = handlerFor(ctx)
+    const result = await handler({ name: '  Demo  ', key: 'demo', project_type: 'issue' })
+    const parsed = JSON.parse(result.content[0].text)
+
+    expect(parsed.success).toBe(true)
+    expect(parsed.project).toEqual({ id: 'new-proj-uuid', key: 'DEMO', name: 'Demo', project_type: 'issue' })
+    // 같은 세션에서 create_task가 되도록 접근 캐시에 push
+    expect(ctx.accessibleProjectIds).toContain('new-proj-uuid')
+  })
+
+  it('중복 key(23505)는 CONFLICT', async () => {
+    mockFrom.mockReturnValueOnce({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505', message: 'duplicate' } }),
+        }),
+      }),
+    })
+
+    const handler = handlerFor(ownedCtx())
+    const result = await handler({ name: 'Demo', key: 'DUP', project_type: 'issue' })
+    const parsed = JSON.parse(result.content[0].text)
+    expect(parsed.error).toBe('CONFLICT')
+  })
+})

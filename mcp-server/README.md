@@ -198,6 +198,7 @@ node dist/index.js --transport http --port 3001
 |------|-----------|-------------|
 | `list_projects` | — | 접근 가능한 프로젝트 목록 |
 | `get_project_meta` | `project_key?` | 프로젝트 메타데이터(상태·트래커·멤버). **작업 전 먼저 호출**해 사용 가능한 status/tracker 이름을 확인 |
+| `create_project` | `name`(필수), `key`(필수, 2–10자 영문 대문자), `project_type`(필수, `issue`\|`requirement`), `description?` | 새 프로젝트 생성. owner는 에이전트 소유자로 지정되고 DB 트리거가 멤버십·트래커·상태를 자동 생성. **owned/global 에이전트만** 호출 가능 |
 
 ### Work Items
 
