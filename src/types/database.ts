@@ -43,6 +43,12 @@ export interface WorkItemExternalLink {
   label?: string
 }
 
+// 프로젝트 연결 레포 설정 (projects.settings.repo)
+export interface RepoSettings {
+  url: string
+  default_branch?: string
+}
+
 export interface ProjectSettings {
   show_tracker_id?: boolean
   show_tracker_id_in_document?: boolean
@@ -51,6 +57,22 @@ export interface ProjectSettings {
   google_drive_url?: string
   external_links?: ExternalLinkEntry[]
   cover_image_path?: string
+  repo?: RepoSettings
+}
+
+// 작업 항목 Git 컨텍스트 (work_items.git_context jsonb, nullable)
+// 백엔드 마이그레이션이 병렬 진행 중이라 컬럼이 없을 수 있으므로 앱 레벨에서 out-of-band 확장한다.
+export interface WorkItemGitContext {
+  repo_url?: string | null
+  branch?: string | null
+  worktree?: string | null
+  commit?: string | null
+  updated_at?: string | null
+}
+
+// git_context를 포함한 work item 확장 (supabase 자동생성 타입은 수정하지 않는다)
+export type WorkItemWithGitContext = WorkItemWithRelations & {
+  git_context?: WorkItemGitContext | null
 }
 
 // Project (settings를 Json → ProjectSettings로 오버라이드)

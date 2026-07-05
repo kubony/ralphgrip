@@ -6,7 +6,8 @@ import { OverviewCharts } from './overview-charts'
 import { RecentActivitySection } from './recent-activity-section'
 import { RelatedProjectsSection } from './related-projects-section'
 import { ProjectIntroSection } from './project-intro-section'
-import type { CrossProjectLink } from '@/types/database'
+import { RepoSection } from './repo-section'
+import type { CrossProjectLink, RepoSettings } from '@/types/database'
 import {
   computeStatusDistribution,
   computeOverdueCount,
@@ -90,9 +91,10 @@ interface ProjectOverviewProps {
   memberCount?: number
   createdAt?: string
   canEdit?: boolean
+  repo?: RepoSettings | null
 }
 
-export function ProjectOverview({ workItems, statuses, members, auditLogs, activityLogs, recentComments, relatedProjects, currentProjectKey, projectId, projectName, projectType, description, coverImagePath, owner, memberCount, createdAt, canEdit }: ProjectOverviewProps) {
+export function ProjectOverview({ workItems, statuses, members, auditLogs, activityLogs, recentComments, relatedProjects, currentProjectKey, projectId, projectName, projectType, description, coverImagePath, owner, memberCount, createdAt, canEdit, repo }: ProjectOverviewProps) {
   const stats = useMemo(() => {
     const total = workItems.length
     const completed = workItems.filter((wi) => wi.status?.is_closed).length
@@ -145,6 +147,7 @@ export function ProjectOverview({ workItems, statuses, members, auditLogs, activ
         burndownData={burndownData}
         activityData={activityData}
       />
+      {repo?.url && <RepoSection repo={repo} />}
       {currentProjectKey && (
         <RecentActivitySection
           activityLogs={activityLogs}

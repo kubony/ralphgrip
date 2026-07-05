@@ -64,6 +64,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       memberCount={members.length}
       createdAt={project.created_at}
       canEdit={canEdit}
+      repo={settings?.repo ?? null}
     />
   )
 }
