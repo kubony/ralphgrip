@@ -16,6 +16,10 @@ Stop hook이 "보고되지 않았습니다"라고 차단하면, 아래 절차를
 
 ## 체크리스트
 
+0. **프로젝트 확인 (레포 = 프로젝트 1:1 고정)**
+   - 레포 루트 `.ralphgrip.json`의 `project_key`를 읽어 모든 RalphGrip 툴 호출에 `project_key`로 명시한다 (이 레포는 `RG`)
+   - 다른 프로젝트에 태스크를 만들지 않는다. 누락하거나 다른 키를 쓰면 PreToolUse hook(`enforce-project-key.sh`)이 호출을 차단한다
+
 1. **현재 work item 확인**
    - `mcp__ralphgrip__whoami`로 내 정체성/권한 확인
    - `mcp__ralphgrip__list_tasks`로 나에게 할당된 열린 work item을 찾는다
