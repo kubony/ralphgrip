@@ -26,7 +26,7 @@ import { DependencySection } from './dependency-section'
 import { AnimatedAccordion } from '@/components/ui/animated-accordion'
 import { DateTimeDisplayToggle } from '@/components/ui/datetime-display-toggle'
 import { cn } from '@/lib/utils'
-import type { WorkItemWithRelations, StatusRef, TrackerRef, PersonRef, AgentRef, AiMetadata, WorkItemExternalLink } from '@/types/database'
+import type { WorkItemWithRelations, StatusRef, TrackerRef, PersonRef, AgentRef, AiMetadata, WorkItemExternalLink, WorkItemGitContext } from '@/types/database'
 import { getAssigneeDisplay, getReporterDisplay } from '@/lib/assignee-utils'
 import { detectLinkDomain } from '@/lib/external-link-utils'
 import { scrollMaskBoth } from '@/lib/motion'
@@ -55,6 +55,11 @@ import Lock from 'lucide-react/dist/esm/icons/lock'
 import Eye from 'lucide-react/dist/esm/icons/eye'
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
 import Bot from 'lucide-react/dist/esm/icons/bot'
+import GitBranch from 'lucide-react/dist/esm/icons/git-branch'
+import GitCommit from 'lucide-react/dist/esm/icons/git-commit'
+import FolderGit2 from 'lucide-react/dist/esm/icons/folder-git-2'
+import { formatDistanceToNow } from 'date-fns'
+import { ko } from 'date-fns/locale/ko'
 
 interface ALMPropertyPanelProps {
   workItem: WorkItemWithRelations | null | undefined
@@ -74,6 +79,7 @@ type WorkItemWithPropertyExtras = WorkItemWithRelations & {
   actual_start_date?: string | null
   actual_end_date?: string | null
   external_links?: WorkItemExternalLink[] | null
+  git_context?: WorkItemGitContext | null
 }
 
 const priorityOptions = [
@@ -456,6 +462,9 @@ export function ALMPropertyPanel({
           </div>
         </div>
       </AnimatedAccordion>
+
+      {/* Git 컨텍스트 섹션 (에이전트 보고 시 채워짐, 읽기전용) */}
+      <GitContextSection gitContext={workItemWithExtras?.git_context} />
 
       {/* 일정 섹션 */}
       <AnimatedAccordion title="일정" defaultOpen={true}>
@@ -1227,6 +1236,91 @@ function DateInputField({
       onDoubleClick={handleDoubleClick}
       disabled={disabled}
     />
+  )
+}
+
+// Git 컨텍스트 섹션 (읽기전용) — 에이전트가 MCP 보고 시 채워지는 git_context를 표시
+function GitContextSection({ gitContext }: { gitContext?: WorkItemGitContext | null }) {
+  if (!gitContext) return null
+
+  const { repo_url, branch, worktree, commit, updated_at } = gitContext
+  // 표시할 값이 하나도 없으면 렌더링하지 않음
+  if (!branch && !commit && !worktree && !repo_url) return null
+
+  const repoBase = repo_url?.replace(/\.git$/, '').replace(/\/$/, '')
+  const shortCommit = commit ? commit.slice(0, 7) : null
+  const branchHref = repoBase && branch ? `${repoBase}/tree/${branch}` : null
+  const commitHref = repoBase && commit ? `${repoBase}/commit/${commit}` : null
+
+  let relativeUpdated: string | null = null
+  if (updated_at) {
+    const d = new Date(updated_at)
+    if (!Number.isNaN(d.getTime())) {
+      relativeUpdated = formatDistanceToNow(d, { addSuffix: true, locale: ko })
+    }
+  }
+
+  return (
+    <AnimatedAccordion title="Git 컨텍스트" defaultOpen={true}>
+      <div className="space-y-2.5">
+        {branch && (
+          <PropertyField icon={<GitBranch className="h-4 w-4" />} label="브랜치">
+            <div className="h-8 px-3 flex items-center text-sm bg-muted/50 rounded-md min-w-0">
+              {branchHref ? (
+                <a
+                  href={branchHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs truncate text-primary hover:underline"
+                  title={branch}
+                >
+                  {branch}
+                </a>
+              ) : (
+                <span className="font-mono text-xs truncate" title={branch}>{branch}</span>
+              )}
+            </div>
+          </PropertyField>
+        )}
+
+        {shortCommit && (
+          <PropertyField icon={<GitCommit className="h-4 w-4" />} label="커밋">
+            <div className="h-8 px-3 flex items-center text-sm bg-muted/50 rounded-md min-w-0">
+              {commitHref ? (
+                <a
+                  href={commitHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-primary hover:underline"
+                  title={commit ?? undefined}
+                >
+                  {shortCommit}
+                </a>
+              ) : (
+                <span className="font-mono text-xs" title={commit ?? undefined}>{shortCommit}</span>
+              )}
+            </div>
+          </PropertyField>
+        )}
+
+        {worktree && (
+          <PropertyField icon={<FolderGit2 className="h-4 w-4" />} label="워크트리">
+            <div className="h-8 px-3 flex items-center text-sm bg-muted/50 rounded-md min-w-0">
+              <span className="font-mono text-xs truncate" title={worktree}>{worktree}</span>
+            </div>
+          </PropertyField>
+        )}
+
+        {relativeUpdated && (
+          <div className="text-xs text-muted-foreground pt-1">
+            <div className="flex items-center gap-2">
+              <Clock className="h-3 w-3" />
+              <span title={updated_at ?? undefined}>업데이트: {relativeUpdated}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </AnimatedAccordion>
   )
 }
 
