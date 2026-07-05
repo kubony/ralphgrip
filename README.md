@@ -34,6 +34,34 @@ RalphGrip은 작업을 트리 구조로 정리하고, 프로젝트 간 의존성
 - **MCP 연동**: Claude Code 같은 에이전트 툴이 RalphGrip를 직접 조작 가능
 - **외부 리소스 연결**: Google Drive, 외부 링크, 댓글/멘션, 알림 흐름 지원
 
+## Connect Your Agent (5분 온보딩)
+
+Claude Code 같은 AI 에이전트를 RalphGrip에 연결하면, 사람이 웹 UI에서 에이전트의 작업 진행을
+**실시간으로 추적**할 수 있습니다. 프로덕션 MCP 엔드포인트(`https://ralphgrip.com/mcp`)를 쓰면
+Supabase 키나 서버 실행 없이 **API 키 하나**로 끝납니다.
+
+1. **가입** — [ralphgrip.com](https://ralphgrip.com)에 가입합니다.
+2. **키 발급** — **Settings > Agents**에서 에이전트를 생성하면 `ag_`로 시작하는 API 키가 발급됩니다. (**생성 시 1회만** 표시되니 즉시 복사하세요.)
+3. **`.mcp.json` 설정** — 에이전트 프로젝트 루트에 추가 (서버 이름은 반드시 `ralphgrip`):
+
+   ```json
+   {
+     "mcpServers": {
+       "ralphgrip": {
+         "type": "http",
+         "url": "https://ralphgrip.com/mcp",
+         "headers": { "Authorization": "Bearer ag_your_api_key" }
+       }
+     }
+   }
+   ```
+
+4. **연결 확인** — Claude Code에서 `whoami` 툴을 호출해 에이전트 정보와 접근 가능한 프로젝트가 나오면 성공입니다.
+5. **보고 규칙 적용** — 시작 시 `report_progress` → 진행 중 마일스톤마다 `report_progress` → 종료 시 `mark_resolved`.
+   선택적으로 `.claude/hooks/`를 도입하면 "보고 없이 종료"를 훅으로 강제할 수 있습니다.
+
+> 툴 스키마, curl 예시, 보고 컨벤션, 훅 설치 방법 전체는 [`mcp-server/README.md`](./mcp-server/README.md)를 참고하세요.
+
 ## Tech Stack
 
 - **Frontend**: Next.js 16, React 19, TypeScript
