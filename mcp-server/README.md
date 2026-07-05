@@ -44,8 +44,49 @@ Supabase 키나 서버 실행이 필요 없습니다. **에이전트 API 키 하
 > ⚠️ **서버 이름은 반드시 `ralphgrip`** 이어야 합니다. 아래 "Claude Code hook으로 보고 강제하기"의
 > 훅 matcher(`mcp__ralphgrip__...`)가 이 이름을 기준으로 동작합니다.
 
+> ⚠️ **변수 확장 함정**: Claude Code의 `.mcp.json`은 `headers`/`env` 블록에서 `${VAR}` 변수 확장이
+> 되지 않는 경우가 많습니다. 키를 `Bearer ${RALPHGRIP_API_KEY}`처럼 넣으면 리터럴 문자열로 전달돼
+> 인증에 실패합니다. 평문으로 직접 넣거나, 아래 프록시 모드/`start-local.sh`처럼 키를 파일·셸 env에서
+> 읽는 방식을 사용하세요.
+
 설정 후 Claude Code에서 `whoami` 툴을 호출하면 에이전트 정보와 접근 가능한 프로젝트 목록이 나옵니다.
 정상 동작하면 연결 완료입니다.
+
+#### 프록시 모드 — `.mcp.json`에 키를 평문으로 넣고 싶지 않을 때
+
+이 저장소를 클론했다면 stdio → 원격 HTTP **프록시 모드**를 쓸 수 있습니다. `RALPHGRIP_URL`이
+설정되면 로컬 프로세스가 `https://ralphgrip.com/mcp`에 `Authorization: Bearer` 헤더를 붙여
+중계하며, Supabase 자격 증명은 필요 없습니다.
+
+```json
+{
+  "mcpServers": {
+    "ralphgrip": {
+      "command": "node",
+      "args": ["/absolute/path/to/ralphgrip/mcp-server/dist/index.js"],
+      "env": {
+        "RALPHGRIP_URL": "https://ralphgrip.com",
+        "RALPHGRIP_API_KEY": "ag_your_api_key"
+      }
+    }
+  }
+}
+```
+
+이 저장소 자체의 `.mcp.json`은 래퍼 스크립트 `mcp-server/start-local.sh`를 호출합니다.
+래퍼는 API 키를 `RALPHGRIP_API_KEY` env 또는 `~/.ralphgrip/api-key` 파일에서 읽으므로
+`.mcp.json`에 평문 키를 넣지 않아도 됩니다.
+
+```json
+{
+  "mcpServers": {
+    "ralphgrip": {
+      "command": "bash",
+      "args": ["mcp-server/start-local.sh"]
+    }
+  }
+}
+```
 
 #### curl로 직접 확인하기 (Streamable HTTP)
 
@@ -122,6 +163,7 @@ node dist/index.js --transport http --port 3001
 | 변수 | 설명 | 필수 |
 |------|------|------|
 | `RALPHGRIP_API_KEY` | 에이전트 API 키 (`agents` 테이블의 `api_key_hash`로 검증) | API Key 모드 |
+| `RALPHGRIP_URL` | 설정 시 **프록시 모드** — stdio 요청을 `{URL}/mcp`로 중계 (Supabase 변수 불필요) | 프록시 모드 |
 | `RALPHGRIP_SUPABASE_URL` | Supabase 프로젝트 URL | Yes |
 | `RALPHGRIP_SERVICE_KEY` | Supabase Service Role Key | Yes |
 | `SUPABASE_URL` | (레거시) Supabase URL | `RALPHGRIP_*` 미설정 시 |
