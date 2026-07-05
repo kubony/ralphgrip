@@ -8,9 +8,9 @@ export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 이미 로그인된 경우 홈(내 작업)으로 리다이렉트
+  // 이미 로그인된 경우 홈(인박스)으로 리다이렉트
   if (user) {
-    redirect('/my-work')
+    redirect('/inbox')
   }
 
   return (

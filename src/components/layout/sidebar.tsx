@@ -5,11 +5,11 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { scrollMaskBoth } from '@/lib/motion'
 import FolderKanban from 'lucide-react/dist/esm/icons/folder-kanban'
-import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list'
+import Inbox from 'lucide-react/dist/esm/icons/inbox'
 import Settings from 'lucide-react/dist/esm/icons/settings'
 
 const navigation = [
-  { name: '내 작업', href: '/my-work', icon: ClipboardList },
+  { name: '인박스', href: '/inbox', icon: Inbox },
   { name: '프로젝트', href: '/projects', icon: FolderKanban },
   { name: '설정', href: '/settings', icon: Settings },
 ]

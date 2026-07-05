@@ -37,6 +37,7 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/auth')
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/projects') ||
+    request.nextUrl.pathname.startsWith('/inbox') ||
     request.nextUrl.pathname.startsWith('/my-work') ||
     request.nextUrl.pathname.startsWith('/settings')
 
@@ -45,11 +46,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    return NextResponse.redirect(new URL('/my-work', request.url))
+    return NextResponse.redirect(new URL('/inbox', request.url))
   }
 
   if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/my-work', request.url))
+    return NextResponse.redirect(new URL('/inbox', request.url))
   }
 
   return supabaseResponse
