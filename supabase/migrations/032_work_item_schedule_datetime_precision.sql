@@ -1,5 +1,9 @@
 -- Upgrade work item schedule fields from date-only to second-level datetime precision
 
+-- [정합화] active_work_items 뷰(SELECT *)가 아래에서 타입 변경할 컬럼들에 의존하므로
+-- ALTER COLUMN TYPE 전에 뷰를 내린다. 이 마이그레이션 하단에서 동일 뷰를 재생성한다.
+DROP VIEW IF EXISTS public.active_work_items;
+
 ALTER TABLE public.work_items
   ADD COLUMN IF NOT EXISTS start_date timestamp,
   ADD COLUMN IF NOT EXISTS actual_start_date timestamp,
