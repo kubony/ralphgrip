@@ -49,6 +49,7 @@ yarn-error.log*
 .opencode/
 .windsurf/
 mcp-server/node_modules/
+orchestrator/node_modules/
 mcp-server/dist/
 orchestrator/dist/
 
